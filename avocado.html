@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AVOCADO FIXING LINES</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      background-color: #50b47b;
+      color: white;
+      width: 100%;
+      text-align: center;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    header img {
+      width: 50px;
+      height: auto;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+
+    header h1 {
+      display: inline-block;
+      font-size: 24px;
+      margin: 0;
+      vertical-align: middle;
+    }
+
+    .container {
+      display: flex;
+      justify-content: space-between;
+      width: 80%;
+      margin: 20px 0;
+    }
+
+    textarea, pre {
+      width: 48%;
+      height: auto;
+      min-height:300px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    .buttons {
+      margin: 20px;
+    }
+
+    .buttons button {
+      background-color: #50b47b;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin-right: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .buttons button:hover {
+      background-color: #429c68;
+    }
+  </style>
+      
+
+</head>
+<body>
+
+  <header>
+    <img src="https://cdn.pixabay.com/photo/2023/08/12/16/45/avocado-8186060_1280.png" alt="Avocado">
+    <h1>AVOCADO FIXING LINES</h1>
+	<h5>V.0.5.0 by Francesco Mucci</h5>
+  </header>
+
+  <div class="buttons">
+  <!-- <button onclick="handleFileUpload()">Upload VTT File</button>-->
+   <button onclick="formatAndDisplayText()">UpperCase</button>
+	<button onclick="correctText()">Fix Lines</button>
+    <button onclick="copyOutput()">Copia</button>
+    <button onclick="downloadOutput()">Download</button>
+  </div>
+
+  <div class="container">
+    <textarea style="margin:16px" id="inputText">
+PASTE THE .VTT FILE HERE
+    </textarea>
+    <pre id="outputText" style="background:white">Output will appear here!</pre>
+  </div>
+
+  <script>
+  
+  //uppercase 
+ // Lista di nomi propri che devono essere preservati nella loro forma originale
+const properNouns = ["San Diego", "New York", "John", "Alice", "IBM"]; // Aggiungi qui tutti i nomi propri che desideri
+
+// Funzione per identificare se una linea è un timestamp
+function isTimestamp(line) {
+  const timestampRegex = /^\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}(.*)$/;
+  return timestampRegex.test(line);
+}
+
+// Funzione per formattare il testo
+function formatText(text) {
+  const lines = text.split('\n');
+  let formattedText = "";
+
+  lines.forEach((line, index) => {
+    if (isTimestamp(line)) {
+      // Se è un timestamp, lo manteniamo intatto
+      formattedText += line + '\n';
+    } else {
+      // Altrimenti, formattiamo il testo
+      const formattedLine = formatLine(line);
+      formattedText += formattedLine + '\n';
+    }
+  });
+
+  return formattedText;
+}
+
+function formatLine(line) {
+    // Divide la linea in frasi basandosi sulla punteggiatura (. ? !) e considerando anche l'inizio della linea
+    const sentences = line.split(/(?<=[.!?])\s+|(?<=^\s+)/);
+
+    const formattedSentences = sentences.map(sentence => {
+        // Controlla se la frase inizia con una lettera minuscola e se è all'inizio della linea o dopo un punto
+        let formattedSentence = sentence;
+        if (/^[a-z]/.test(sentence) && (/^[.!?]\s/.test(line) || line.trim() === sentence)) {
+            // Capitalizza la prima lettera
+            formattedSentence = sentence.charAt(0).toUpperCase() + sentence.slice(1);
+        } else {
+            // Mette in minuscolo la prima lettera
+            formattedSentence = sentence.charAt(0).toLowerCase() + sentence.slice(1).toLowerCase();
+        }
+
+        // Controlla se la frase contiene nomi propri e li ripristina
+        properNouns.forEach(properNoun => {
+            const regex = new RegExp('\\b' + properNoun.toLowerCase() + '\\b', 'gi');
+            formattedSentence = formattedSentence.replace(regex, properNoun);
+        });
+
+        return formattedSentence;
+    });
+
+    // Unisce di nuovo le frasi formattate
+    return formattedSentences.join(' ');
+}
+
+  function formatAndDisplayText() {
+  const inputText = document.getElementById("inputText").value;
+  const formattedText = formatText(inputText);
+  document.getElementById("outputText").textContent = formattedText;
+};
+   function handleFileUpload() {
+      const fileInput = document.getElementById('fileInput');
+      const textArea = document.getElementById('inputText');
+
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+          textArea.value = event.target.result;
+        };
+
+        reader.readAsText(file);
+      }
+    }
+
+  // Function to correct the text by adding a newline before timestamps and limiting non-timestamp strings to 32 characters
+function correctText() {
+  const maxCharsPerLine = 32;
+
+  const lines = document.getElementById('inputText').value.split('\n');
+  let result = [];
+  let currentLine = '';
+  let inParentheses = false;
+
+  lines.forEach(line => {
+    // Check if the line is a timestamp
+    const isTimestamp = line.includes('-->') && !isParenthesis(line);
+
+    if (isTimestamp) {
+      // Ensure timestamp is on a new line and currentLine is empty
+      if (currentLine) {
+        result.push(currentLine);
+        currentLine = '';
+      }
+      result.push('\n' + line);
+      inParentheses = false; // Reset parentheses state for the next line
+    } else {
+      // Check if the line starts or ends with a parenthesis
+      if (line.trim().startsWith('(')) {
+        inParentheses = true;
+      }
+      if (line.trim().endsWith(')')) {
+        inParentheses = false;
+      }
+
+      // If inside parentheses and the next line starts with a parenthesis with no intervening whitespace, join them
+      if (inParentheses && lines[lines.indexOf(line) + 1].trim().startsWith('(') &&
+          lines[lines.indexOf(line) + 1].trim().slice(1) === line.trim().slice(-1)) {
+		  
+        currentLine += ' ' + lines[lines.indexOf(line) + 1].trim();
+          console.log("Joining lines:", line, lines[lines.indexOf(line) + 1]);
+		lines.splice(lines.indexOf(line) + 1, 1); // Remove the joined line
+		    
+
+		 
+  
+		
+      } else {
+        // Divide the line into words for better length management
+        const words = line.split(' ');
+        words.forEach(word => {
+          if (currentLine.length + word.length + 1 > maxCharsPerLine) {
+            result.push(currentLine);
+            currentLine = word;
+          } else {
+            currentLine += (currentLine ? ' ' : '') + word;
+          }
+        });
+      }
+
+      // If at the end of lines or encountering a timestamp and having a line to add, add it
+      if (lines.indexOf(line) === lines.length - 1 || isTimestamp) {
+        if (currentLine) {
+          result.push(currentLine);
+          currentLine = '';
+        }
+      }
+    }
+  });
+
+  document.getElementById('outputText').textContent = result.join('\n');
+}
+
+
+
+// Function to check if a line contains only parenthesis
+function isParenthesis(line) {
+  return line.replace(/^\s*(\(.*\))\s*$/, '$1').length === 0;
+}
+
+// Function to check if a line contains only parenthesis
+function isParenthesis(line) {
+  return line.replace(/^\s*(\(.*\))\s*$/, '$1').length === 0;
+}
+
+    // Function to copy the output text to the clipboard
+    function copyOutput() {
+      let outputText = document.getElementById('outputText').textContent;
+      navigator.clipboard.writeText(outputText).then(() => {
+        alert('Testo copiato negli appunti!');
+      });
+    }
+
+    // Function to download the output as a .vtt file
+    function downloadOutput() {
+      let outputText = document.getElementById('outputText').textContent;
+      let blob = new Blob([outputText], { type: 'text/vtt' });
+      let url = URL.createObjectURL(blob);
+      let a = document.createElement('a');
+      a.href = url;
+      a.download = 'output.vtt';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>

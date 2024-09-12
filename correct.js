@@ -70,36 +70,48 @@ function getTimestampDifference(timestamp1, timestamp2) {
   const time1 = timestamp1.split(/[:.]/); // Split by colon and dot
   const time2 = timestamp2.split(/[:.]/);
 
+  console.log("Comparing timestamps:", timestamp1, timestamp2);
+
   // Convert hours, minutes, seconds, milliseconds to total milliseconds
   const ms1 = (parseInt(time1[0]) * 3600000) + (parseInt(time1[1]) * 60000) + (parseInt(time1[2]) * 1000) + parseInt(time1[3]);
   const ms2 = (parseInt(time2[0]) * 3600000) + (parseInt(time2[1]) * 60000) + (parseInt(time2[2]) * 1000) + parseInt(time2[3]);
 
-  return ms2 - ms1; // Return the difference in milliseconds
+  const diff = ms2 - ms1;
+  console.log("Difference in milliseconds:", diff);
+
+  return diff; // Return the difference in milliseconds
 }
 
-// Applica la logica dei timestamp per unire righe consecutive se necessario
+// Applies timestamp logic for consecutive lines (combines if within threshold)
 function applyTimestampLogic(formattedText, formattedLine) {
   const parts = formattedText.split('\n');
   const lastLine = parts[parts.length - 1];
   
-  // Estrai i timestamp
-  const match1 = lastLine.match(/^(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3}) line:-\d+$/);
-  const match2 = formattedLine.match(/^(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3}) line:-\d+$/);
+  // Extract timestamps
+  const match1 = lastLine.match(/^(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/);
+  const match2 = formattedLine.match(/^(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/);
+
+  console.log("Matching last line:", lastLine);
+  console.log("Matching current line:", formattedLine);
 
   if (match1 && match2) {
-    const endOfLast = match1[2]; // Timestamp di fine dell'ultima riga
-    const startOfCurrent = match2[1]; // Timestamp di inizio della riga corrente
-    const durationOfLast = getTimestampDifference(match1[1], match1[2]); // Durata dell'ultima riga
+    const timestamp1 = match1[2];
+    const timestamp2 = match2[1];
+    const diff = getTimestampDifference(timestamp1, timestamp2);
 
-    // Se la durata della riga precedente è troppo breve (meno di 500 ms), unisci la riga successiva
-    if (durationOfLast < 28) {
-      parts.pop(); // Rimuovi l'ultima riga
-      return parts.join('\n') + '\n' + formattedLine; // Combina le righe
+    // Combine lines if difference is within threshold (28 milliseconds)
+    if (diff <= 28) {
+      parts.pop(); // Remove last line
+      console.log("Merging lines");
+      return parts.join('\n') + '\n' + formattedLine;
+    } else {
+      console.log("Not merging: difference is greater than 28 ms");
     }
   }
 
-  return formattedText + formattedLine + '\n'; // Non combinare
+  return formattedText + formattedLine + '\n'; // Don't combine
 }
+
 
 // Formatta il testo completo
 async function formatText(text) {

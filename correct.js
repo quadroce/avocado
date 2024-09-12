@@ -40,8 +40,8 @@ async function formatText(text) {
   return formattedText;
 }
 
-// Applies timestamp logic for consecutive lines (combines if within threshold)
 function applyTimestampLogic(formattedText, formattedLine) {
+  console.log("applyTimestampLogic called");  // Log when function is called
   const parts = formattedText.split('\n');
   const lastLine = parts[parts.length - 1];
   
@@ -50,23 +50,30 @@ function applyTimestampLogic(formattedText, formattedLine) {
   const match2 = formattedLine.match(/^(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/);
 
   if (match1 && match2) {
+    console.log("Timestamps found:", match1[2], match2[1]); // Log the found timestamps
+
     const timestamp1 = match1[2];
     const timestamp2 = match2[1];
     const diff = getTimestampDifference(timestamp1, timestamp2);
 
     // Combine lines if difference is within threshold (28 milliseconds)
     if (diff <= 28) {
+      console.log("Merging lines, diff is", diff);  // Log if lines are being merged
       parts.pop(); // Remove last line
-      console("merged");
       return parts.join('\n') + '\n' + formattedLine;
+    } else {
+      console.log("Not merging, diff is", diff);  // Log if lines are not merged
     }
+  } else {
+    console.log("Timestamps not found");
   }
 
   return formattedText + formattedLine + '\n'; // Don't combine
 }
 
 function getTimestampDifference(timestamp1, timestamp2) {
-  console.log("getTimestampDifference called with:", timestamp1, timestamp2);
+  console.log("getTimestampDifference called with:", timestamp1, timestamp2); // Log when called
+
   const time1 = timestamp1.split(/[:.]/); // Split by colon and dot
   const time2 = timestamp2.split(/[:.]/);
 
@@ -75,39 +82,11 @@ function getTimestampDifference(timestamp1, timestamp2) {
   const ms2 = (parseInt(time2[0]) * 3600000) + (parseInt(time2[1]) * 60000) + (parseInt(time2[2]) * 1000) + parseInt(time2[3]);
 
   const diff = ms2 - ms1;
-  console.log("Difference in milliseconds:", diff);
+  console.log("Difference in milliseconds:", diff);  // Log the calculated difference
 
   return diff; // Return the difference in milliseconds
 }
 
-// Applies timestamp logic for consecutive lines (combines if within threshold)
-function applyTimestampLogic(formattedText, formattedLine) {
-  const parts = formattedText.split('\n');
-  const lastLine = parts[parts.length - 1];
-  
-  // Extract timestamps
-  const match1 = lastLine.match(/^(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/);
-  const match2 = formattedLine.match(/^(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/);
-
-  console.log("Matching last line:", lastLine);
-  console.log("Matching current line:", formattedLine);
-
-  if (match1 && match2) {
-    const timestamp1 = match1[2];
-    const timestamp2 = match2[1];
-    const diff = getTimestampDifference(timestamp1, timestamp2);
-
-    // Combine lines if difference is within threshold (28 milliseconds)
-   if (diff <= 28) {
-  console.log("Merging lines, diff is", diff);
-  parts.pop(); // Remove last line
-  return parts.join('\n') + '\n' + formattedLine;
-} else {
-  console.log("Not merging, diff is", diff);
-}
-
-  return formattedText + formattedLine + '\n'; // Don't combine
-}
 
 
 // Formatta il testo completo

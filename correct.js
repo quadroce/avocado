@@ -189,6 +189,7 @@ function getTimestampDifference(timestamp1, timestamp2) {
 
 // Applica la logica dei timestamp
 function applyTimestampLogic(formattedText, formattedLine) {
+  console.log("applyTimestampLogic called");
   const parts = formattedText.split('\n');
   const lastLine = parts[parts.length - 1];
   

@@ -52,6 +52,9 @@ function applyTimestampLogic(formattedText, formattedLine) {
   const match1 = lastLine.match(timestampRegex);
   const match2 = formattedLine.match(timestampRegex);
 
+  console.log("match1:", match1);
+  console.log("match2:", match2);
+  
   if (!match1 || !match2) {
     return formattedText + formattedLine + '\n'; // Early return if timestamps not found
   }
@@ -60,10 +63,18 @@ function applyTimestampLogic(formattedText, formattedLine) {
   const timestamp2 = match2[1];
   const diff = getTimestampDifference(timestamp1, timestamp2);
 
+console.log("timestamp1:", timestamp1);
+  console.log("timestamp2:", timestamp2);
+  console.log("diff:", diff);
+  
+  
   if (diff <= 28) {
+        console.log("Merging lines, diff is", diff);
+
     parts.pop();
     return parts.join('\n') + '\n' + formattedLine;
   }
+    console.log("Not merging, diff is", diff);
 
   return formattedText + formattedLine + '\n'; // Don't combine
 }

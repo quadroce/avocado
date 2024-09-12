@@ -65,12 +65,10 @@ function applyTimestampLogic(formattedText, formattedLine) {
   return formattedText + formattedLine + '\n'; // Don't combine
 }
 
-// Calcola la differenza tra due timestamp in millisecondi
 function getTimestampDifference(timestamp1, timestamp2) {
+  console.log("getTimestampDifference called with:", timestamp1, timestamp2);
   const time1 = timestamp1.split(/[:.]/); // Split by colon and dot
   const time2 = timestamp2.split(/[:.]/);
-
-  console.log("Comparing timestamps:", timestamp1, timestamp2);
 
   // Convert hours, minutes, seconds, milliseconds to total milliseconds
   const ms1 = (parseInt(time1[0]) * 3600000) + (parseInt(time1[1]) * 60000) + (parseInt(time1[2]) * 1000) + parseInt(time1[3]);
@@ -100,14 +98,13 @@ function applyTimestampLogic(formattedText, formattedLine) {
     const diff = getTimestampDifference(timestamp1, timestamp2);
 
     // Combine lines if difference is within threshold (28 milliseconds)
-    if (diff <= 28) {
-      parts.pop(); // Remove last line
-      console.log("Merging lines");
-      return parts.join('\n') + '\n' + formattedLine;
-    } else {
-      console.log("Not merging: difference is greater than 28 ms");
-    }
-  }
+   if (diff <= 28) {
+  console.log("Merging lines, diff is", diff);
+  parts.pop(); // Remove last line
+  return parts.join('\n') + '\n' + formattedLine;
+} else {
+  console.log("Not merging, diff is", diff);
+}
 
   return formattedText + formattedLine + '\n'; // Don't combine
 }

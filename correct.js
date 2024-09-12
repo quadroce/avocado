@@ -46,6 +46,11 @@ async function formatText(text) {
 }
 
 function applyTimestampLogic(formattedText, formattedLine) {
+  console.log("applyTimestampLogic called");
+
+  console.log("formattedText:", formattedText);
+  console.log("formattedLine:", formattedLine);
+
   const parts = formattedText.split('\n');
   const lastLine = parts[parts.length - 1];
 
@@ -54,8 +59,9 @@ function applyTimestampLogic(formattedText, formattedLine) {
 
   console.log("match1:", match1);
   console.log("match2:", match2);
-  
+
   if (!match1 || !match2) {
+    console.log("Timestamps not found");
     return formattedText + formattedLine + '\n'; // Early return if timestamps not found
   }
 
@@ -63,18 +69,17 @@ function applyTimestampLogic(formattedText, formattedLine) {
   const timestamp2 = match2[1];
   const diff = getTimestampDifference(timestamp1, timestamp2);
 
-console.log("timestamp1:", timestamp1);
+  console.log("timestamp1:", timestamp1);
   console.log("timestamp2:", timestamp2);
   console.log("diff:", diff);
-  
-  
-  if (diff <= 28) {
-        console.log("Merging lines, diff is", diff);
 
+  if (diff <= 28) {
+    console.log("Merging lines, diff is", diff);
     parts.pop();
     return parts.join('\n') + '\n' + formattedLine;
-  }
+  } else {
     console.log("Not merging, diff is", diff);
+  }
 
   return formattedText + formattedLine + '\n'; // Don't combine
 }

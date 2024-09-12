@@ -46,8 +46,8 @@ function applyTimestampLogic(formattedText, formattedLine) {
   const lastLine = parts[parts.length - 1];
   
   // Extract timestamps
-  const match1 = lastLine.match(/^(\d{2}:\d{2}:\d{2}.\d{3}) --> (\d{2}:\d{2}:\d{2}.\d{3}) line:-1\s+/);
-  const match2 = formattedLine.match(/^(\d{2}:\d{2}:\d{2}.\d{3}) --> (\d{2}:\d{2}:\d{2}.\d{3}) line:-1\s+/);
+  const match1 = lastLine.match(/^(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/);
+  const match2 = formattedLine.match(/^(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/);
 
   if (match1 && match2) {
     const timestamp1 = match1[2];
@@ -55,7 +55,7 @@ function applyTimestampLogic(formattedText, formattedLine) {
     const diff = getTimestampDifference(timestamp1, timestamp2);
 
     // Combine lines if difference is within threshold (28 milliseconds)
-    if (diff <= 30) {
+    if (diff <= 28) {
       parts.pop(); // Remove last line
       return parts.join('\n') + '\n' + formattedLine;
     }
@@ -66,14 +66,16 @@ function applyTimestampLogic(formattedText, formattedLine) {
 
 // Function to calculate timestamp difference in milliseconds
 function getTimestampDifference(timestamp1, timestamp2) {
-  const parts1 = timestamp1.split(':');
-  const parts2 = timestamp2.split(':');
+  const time1 = timestamp1.split(/[:.]/); // Split by colon and dot
+  const time2 = timestamp2.split(/[:.]/);
   
-  const ms1 = parseInt(parts1[0]) * 3600000 + parseInt(parts1[1]) * 60000 + parseInt(parts1[2]) * 1000 + parseInt(parts1[3]);
-  const ms2 = parseInt(parts2[0]) * 3600000 + parseInt(parts2[1]) * 60000 + parseInt(parts2[2]) * 1000 + parseInt(parts2[3]);
-  
-  return ms2 - ms1;
+  // Convert hours, minutes, seconds, milliseconds to total milliseconds
+  const ms1 = (parseInt(time1[0]) * 3600000) + (parseInt(time1[1]) * 60000) + (parseInt(time1[2]) * 1000) + parseInt(time1[3]);
+  const ms2 = (parseInt(time2[0]) * 3600000) + (parseInt(time2[1]) * 60000) + (parseInt(time2[2]) * 1000) + parseInt(time2[3]);
+
+  return ms2 - ms1; // Return difference in milliseconds
 }
+
 // Formatta una singola riga
 function formatLine(line) {
   const sentences = line.split(/([.!?]\s*)/);
@@ -154,14 +156,3 @@ function copyOutput() {
   });
 }
 
-// Downloads the output as a .vtt file
-function downloadOutput() {
-  const outputText = document.getElementById('outputText').textContent;
-  const blob = new Blob([outputText], { type: 'text/vtt' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'output.vtt';
-  a.click();
-  URL.revokeObjectURL(url);
-}

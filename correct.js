@@ -1,4 +1,4 @@
-//2347
+//2351
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
   const processedCaptions = formatText(inputText);
@@ -18,7 +18,7 @@ function formatAndDisplayText() {
 // Function to add a newline before every timestamp
 function addNewLineBeforeTimestamps(text) {
   const timestampRegex = /^\d{1,2}:\d{2}:\d{2}\.\d{3} --> \d{1,2}:\d{2}:\d{2}\.\d{3}/;
-  return text.replace(timestampRegex, match => `\n${match}`);
+  return text.replace(timestampRegex, match => `\n\n${match}`);
 }
 // Process the input text and identify captions for merging
 function cleanTimestamp(timestamp) {

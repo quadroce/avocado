@@ -57,6 +57,7 @@ function applyTimestampLogic(formattedText, formattedLine) {
     // Combine lines if difference is within threshold (28 milliseconds)
     if (diff <= 28) {
       parts.pop(); // Remove last line
+      console("merged");
       return parts.join('\n') + '\n' + formattedLine;
     }
   }

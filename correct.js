@@ -1,20 +1,24 @@
-// Main function to handle button click
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
   const processedCaptions = formatText(inputText);
   const mergedCaptions = mergeCaptions(processedCaptions);
-  
+
   const formattedText = mergedCaptions.map(caption => {
     if (caption.type === 'header') {
       return caption.content;
     }
     return `${caption.timestamp}\n${caption.text}`;
   }).join('\n\n');
-  
+
   const correctedText = correctText(formattedText);
-  document.getElementById("outputText").textContent = correctedText;
+  document.getElementById("outputText").textContent = addNewLineBeforeTimestamps(correctedText);
 }
 
+// Function to add a newline before every timestamp
+function addNewLineBeforeTimestamps(text) {
+  const timestampRegex = /^\d{1,2}:\d{2}:\d{2}\.\d{3} --> \d{1,2}:\d{2}:\d{2}\.\d{3}/;
+  return text.replace(timestampRegex, match => `\n${match}`);
+}
 // Process the input text and identify captions for merging
 function cleanTimestamp(timestamp) {
   const parts = timestamp.split(' ');

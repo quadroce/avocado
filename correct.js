@@ -145,14 +145,4 @@ function copyOutput() {
   });
 }
 
-// Downloads the output as a .vtt file
-function downloadOutput() {
-  const outputText = document.getElementById('outputText').textContent;
-  const blob = new Blob([outputText], { type: 'text/vtt' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'output.vtt';
-  a.click();
-  URL.revokeObjectURL(url);
-}
+

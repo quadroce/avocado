@@ -30,10 +30,11 @@ async function formatText(text) {
       } else {
         formattedLines.push(formattedLine);
       }
-    }
+    
   }
 
   return formattedLines.join('\n');  // Efficient string joining
+}
 }
 
 function applyTimestampLogic(formattedText, formattedLine) {

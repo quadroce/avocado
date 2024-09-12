@@ -8,61 +8,64 @@ function formatAndDisplayText() {
 }
 const isTimestampRegex = new RegExp(/^[0-9]{2}:[0-9]{2}:[0-9]{2}\.\d{3} --> [0-9]{2}:[0-9]{2}:[0-9]{2}\.\d{3} line:-\d+$/);  // Pre-compiled regex
 
+const timestampRegex = new RegExp(/^[0-9]{2}:[0-9]{2}:[0-9]{2}\.\d{3} --> [0-9]{2}:[0-9]{2}:[0-9]{2}\.\d{3} line:-\d+$/);
+const isTimestampCache = new Map();
+
 async function formatText(text) {
   if (typeof text !== 'string') {
     throw new Error('Input text must be a string');
   }
 
-  const formattedLines = [];  // Use array for formatted lines
+  const lines = text.split('\n');
+  const formattedLines = [];
 
-  for (const line of text.split('\n')) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
     if (line.startsWith("WEBVTT")) {
-      formattedLines.push(line);
+      formattedLines.push(line + '\n');
       continue;
     }
 
-    if (isTimestampRegex.test(line)) {
-      formattedLines.push(line);
+    const isTimestamp = isTimestampCache.get(line) || timestampRegex.test(line);
+    isTimestampCache.set(line, isTimestamp);
+
+    if (isTimestamp) {
+      formattedLines.push(line + '\n');
     } else {
       const formattedLine = formatLine(line);
-      if (formattedLines.length > 0 && isTimestampRegex.test(formattedLines[formattedLines.length - 1])) {
-        formattedLines.push(applyTimestampLogic(formattedLines.join('\n'), formattedLine));  // Use join and apply logic
+      if (i > 0 && isTimestamp(lines[i - 1])) {
+        formattedLines.push(applyTimestampLogic(formattedLines.join('\n'), formattedLine));
       } else {
-        formattedLines.push(formattedLine);
+        formattedLines.push(formattedLine + '\n');
       }
-    
-  }
-
-  return formattedLines.join('\n');  // Efficient string joining
-}
-}
-
-function applyTimestampLogic(formattedText, formattedLine) {
-  console.log("applyTimestampLogic called");
-
-  const timestamps = formattedText.match(isTimestampRegex);
-  if (!timestamps || timestamps.length !== 2) {
-    console.log("Error: Unexpected timestamp format");  // Error handling
-    return formattedText + formattedLine + '\n';  // Fallback behavior
-  }
-
-  const timestamp1 = timestamps[1];
-  const timestamp2 = formattedLine.match(isTimestampRegex)[1];  // Extract timestamp from formattedLine
-  const diff = getTimestampDifference(timestamp1, timestamp2);
-
-  if (diff <= 28) {
-    console.log("Merging lines, diff is", diff);
-    return formattedText.replace(/\n$/, '') + '\n' + formattedLine; // Efficient concatenation using replace
-  } else {
-    console.log("Not merging, diff is", diff);
-  }
-
-  return formattedText + formattedLine + '\n'; // Don't combine
-}
     }
   }
 
-  return formattedText;
+  return formattedLines.join('\n');
+}
+
+function applyTimestampLogic(formattedText, formattedLine) {
+  const parts = formattedText.split('\n');
+  const lastLine = parts[parts.length - 1];
+
+  const match1 = lastLine.match(timestampRegex);
+  const match2 = formattedLine.match(timestampRegex);
+
+  if (!match1 || !match2) {
+    return formattedText + formattedLine + '\n'; // Early return if timestamps not found
+  }
+
+  const timestamp1 = match1[2];
+  const timestamp2 = match2[1];
+  const diff = getTimestampDifference(timestamp1, timestamp2);
+
+  if (diff <= 28) {
+    parts.pop();
+    return parts.join('\n') + '\n' + formattedLine;
+  }
+
+  return formattedText + formattedLine + '\n';
 }
 
 function applyTimestampLogic(formattedText, formattedLine) {

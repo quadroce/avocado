@@ -44,10 +44,16 @@ function applyTimestampLogic(formattedText, formattedLine) {
   console.log("applyTimestampLogic called");  // Log when function is called
   const parts = formattedText.split('\n');
   const lastLine = parts[parts.length - 1];
+
+    console.log("Last line:", lastLine);  // Log last line
+  console.log("Formatted line:", formattedLine);  // Log formatted line
+
+
   
   // Extract timestamps
-  const match1 = lastLine.match(/^(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/);
-  const match2 = formattedLine.match(/^(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/);
+const match1 = lastLine.match(/^(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3}) line:-\d+$/);
+const match2 = formattedLine.match(/^(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3}) line:-\d+$/);
+
 
   if (match1 && match2) {
     console.log("Timestamps found:", match1[2], match2[1]); // Log the found timestamps

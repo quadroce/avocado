@@ -65,7 +65,7 @@ function applyTimestampLogic(formattedText, formattedLine) {
     return parts.join('\n') + '\n' + formattedLine;
   }
 
-  return formattedText + formattedLine + '\n';
+  return formattedText + formattedLine + '\n'; // Don't combine
 }
 
 function applyTimestampLogic(formattedText, formattedLine) {

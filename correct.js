@@ -114,7 +114,7 @@ function mergeCaptions(captions) {
 }
 
 // Function to correct text (from original code)
-function correctText(text) {
+ function correctText(text) {
   const maxCharsPerLine = 32;
   const lines = text.split('\n');
   let result = [];
@@ -181,3 +181,9 @@ function downloadOutput() {
   URL.revokeObjectURL(url);
 }
 
+// Event listener for the format button
+document.getElementById('formatButton').addEventListener('click', formatAndDisplayText);
+
+// Event listeners for copy and download buttons (if they exist in your HTML)
+document.getElementById('copyButton')?.addEventListener('click', copyOutput);
+document.getElementById('downloadButton')?.addEventListener('click', downloadOutput);

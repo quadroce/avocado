@@ -1,20 +1,22 @@
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
+  let totalCombinedCaptions = 0;
 
-  formatText(inputText).then(formattedText => {
+  formatText(inputText, totalCombinedCaptions).then(formattedText => {
     const correctedText = correctText(formattedText);
     document.getElementById("outputText").textContent = correctedText;
+    console.log(`Total captions combined: ${totalCombinedCaptions}`);
   });
 }
 
-async function formatText(text) {
+async function formatText(text, totalCombinedCaptions) {
   if (typeof text !== 'string') {
     throw new Error('Input text must be a string');
   }
 
   const lines = text.split('\n');
   let formattedText = "";
-  let previousTimestamp = null; // Store the timestamp of the previous line
+  let previousTimestamp = null;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -32,15 +34,18 @@ async function formatText(text) {
     } else {
       const formattedLine = formatLine(line);
       
-      // Apply timestamp logic for consecutive lines
-      if (previousTimestamp && getTimestampDifference(previousTimestamp, extractTimestamp(line)) <= 28) {
-        // Combine lines if difference is within threshold (28 milliseconds)
-        formattedText = formattedText.substring(0, formattedText.lastIndexOf('\n')); // Remove the previous line
-      } else {
-        formattedText += formattedLine + '\n';
-      }
-      previousTimestamp = null; // Reset previous timestamp for non-consecutive lines
+ if (previousTimestamp && getTimestampDifference(previousTimestamp, extractTimestamp(line)) <= 28) {
+      // Combina le caption
+      totalCombinedCaptions++;
+      console.log(`Caption combined: ${previousTimestamp} - ${extractTimestamp(line)}`);
+      formattedText = formattedText.substring(0, formattedText.lastIndexOf('\n'));
+    } else {
+      // Aggiunge la caption
+      console.log(`Caption length: ${line.length}`);
+      formattedText += formattedLine + '\n';
     }
+
+    previousTimestamp = isTimestamp(line) ? extractTimestamp(line) : null;
   }
 
   return formattedText;

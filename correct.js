@@ -92,21 +92,57 @@ function splitCaptionByDuration(caption, maxDuration) {
   const splitTimestamp = getMidTimestamp(start, splitPoint);
   const gapEndTimestamp = addFramesToTimestamp(splitTimestamp, 4);
 
+  // Extract alignment and positioning info
+  const alignInfo = caption.timestamp.split(' --> ')[1].split(' ').slice(1).join(' ');
+
+  // Find a good splitting point
+  let splitIndex = findSplitIndex(caption.text);
+
   const firstPart = {
-    timestamp: `${start} --> ${splitTimestamp}`,
-    text: caption.text.substring(0, Math.floor(caption.text.length / 2)).trim(),
+    timestamp: `${start} --> ${splitTimestamp} ${alignInfo}`,
+    text: caption.text.substring(0, splitIndex).trim(),
     duration: splitPoint,
     shouldMerge: false
   };
 
   const secondPart = {
-    timestamp: `${gapEndTimestamp} --> ${end}`,
-    text: caption.text.substring(Math.floor(caption.text.length / 2)).trim(),
-    duration: totalDuration - splitPoint - 166,
+    timestamp: `${gapEndTimestamp} --> ${end} ${alignInfo}`,
+    text: caption.text.substring(splitIndex).trim(),
+    duration: totalDuration - splitPoint - 166, // Assuming 24 fps, 4 frames = 166ms
     shouldMerge: false
   };
 
   return [firstPart, secondPart];
+}
+
+function findSplitIndex(text) {
+  // First, try to split at the end of a sentence
+  const sentenceEnd = text.indexOf('. ', text.length / 2 - 20);
+  if (sentenceEnd !== -1 && sentenceEnd <= text.length / 2 + 20) {
+    return sentenceEnd + 1; // Include the period in the first part
+  }
+
+  // If no sentence end is found, try to split at a speaker change
+  const speakerChange = text.indexOf('>> ', text.length / 2 - 20);
+  if (speakerChange !== -1 && speakerChange <= text.length / 2 + 20) {
+    return speakerChange;
+  }
+
+  // If no good splitting point is found, split at the nearest space to the midpoint
+  const midPoint = Math.floor(text.length / 2);
+  const leftSpace = text.lastIndexOf(' ', midPoint);
+  const rightSpace = text.indexOf(' ', midPoint);
+
+  if (leftSpace === -1 && rightSpace === -1) {
+    return midPoint; // No spaces found, split in the middle of a word as a last resort
+  } else if (leftSpace === -1) {
+    return rightSpace;
+  } else if (rightSpace === -1) {
+    return leftSpace;
+  } else {
+    // Return the nearest space to the midpoint
+    return (midPoint - leftSpace <= rightSpace - midPoint) ? leftSpace : rightSpace;
+  }
 }
 
 function addFramesToTimestamp(timestamp, frames) {

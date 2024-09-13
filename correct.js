@@ -1,4 +1,4 @@
-130920242352
+140920240003
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
   const processedCaptions = formatText(inputText);
@@ -282,45 +282,58 @@ function getTimestampDifference(timestamp1, timestamp2) {
 function mergeCaptions(captions) {
   let mergedCaptions = [];
   let currentMerge = null;
-  let totalDuration = 0;
+  let lineCount = 0;
+
+  function pushCurrentMerge() {
+    if (currentMerge) {
+      mergedCaptions.push(currentMerge);
+      currentMerge = null;
+      lineCount = 0;
+    }
+  }
 
   for (let caption of captions) {
     if (caption.type === 'header') {
+      pushCurrentMerge();
       mergedCaptions.push(caption);
       continue;
     }
 
+    const captionLines = caption.text.split('\n');
+
     if (!currentMerge) {
       currentMerge = { ...caption };
-      totalDuration = caption.duration;
+      lineCount = captionLines.length;
     } else {
-      const [currentStart] = currentMerge.timestamp.split(' --> ');
-      const [, nextEnd] = caption.timestamp.split(' --> ');
-      const newDuration = getTimestampDifference(currentStart, nextEnd);
+      let availableLines = 3 - lineCount;
+      let linesToAdd = Math.min(availableLines, captionLines.length);
 
-      if (newDuration >= 1200 && newDuration <= 7000 && currentMerge.text.split('\n').length + caption.text.split('\n').length <= 3) {
+      if (linesToAdd > 0) {
+        const [currentStart] = currentMerge.timestamp.split(' --> ');
+        const [, nextEnd] = caption.timestamp.split(' --> ');
         currentMerge.timestamp = `${currentStart} --> ${nextEnd}`;
-        currentMerge.text += '\n' + caption.text;
-        currentMerge.duration = newDuration;
-        totalDuration = newDuration;
-      } else {
-        mergedCaptions.push(currentMerge);
-        currentMerge = { ...caption };
-        totalDuration = caption.duration;
+        currentMerge.text += '\n' + captionLines.slice(0, linesToAdd).join('\n');
+        currentMerge.duration = getTimestampDifference(currentStart, nextEnd);
+        lineCount += linesToAdd;
+      }
+
+      if (linesToAdd < captionLines.length) {
+        pushCurrentMerge();
+        currentMerge = {
+          ...caption,
+          text: captionLines.slice(linesToAdd).join('\n'),
+          timestamp: `${addMillisecondsToTimestamp(caption.timestamp.split(' --> ')[0], linesToAdd * 1000)} --> ${caption.timestamp.split(' --> ')[1]}`
+        };
+        lineCount = captionLines.length - linesToAdd;
       }
     }
 
-    if (totalDuration > 7000 || currentMerge.text.split('\n').length > 3) {
-      mergedCaptions.push(currentMerge);
-      currentMerge = null;
-      totalDuration = 0;
+    if (lineCount === 3) {
+      pushCurrentMerge();
     }
   }
 
-  if (currentMerge) {
-    mergedCaptions.push(currentMerge);
-  }
-
+  pushCurrentMerge();
   return mergedCaptions;
 }
 
@@ -337,7 +350,6 @@ function addMillisecondsToTimestamp(timestamp, milliseconds) {
 
   return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}.${String(newMilliseconds).padStart(3, '0')}`;
 }
-
 function copyOutput() {
   const outputText = document.getElementById('outputText').textContent;
   navigator.clipboard.writeText(outputText).then(() => {

@@ -125,20 +125,32 @@ function getMidTimestamp(startTimestamp, splitDuration) {
   return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}.${String(newMilliseconds).padStart(3, '0')}`;
 }
 
-// Function to split captions longer than 3 lines
+// Function to split captions longer than 3 lines, ensuring ">>" starts new lines
 function splitLongCaptions(text) {
-  const lines = text.split(/\s*>>\s*/).join('\n>> ').split('\n');
+  // Split on ">>" to handle speaker changes and ensure each ">>" starts a new line
+  let lines = text.split(/\s*>>\s*/).map(line => line.trim()).filter(line => line.length > 0);
+  
   let result = [];
+  let currentCaption = "";
 
-  let filteredLines = lines.filter(line => line.trim().length > 0);
-  while (filteredLines.length > 3) {
-    let middle = Math.floor(filteredLines.length / 2);
-    result.push(filteredLines.splice(0, middle).join('\n'));
+  lines.forEach(line => {
+    let newLine = line.startsWith(">>") ? ">> " + line : line;
+
+    if (currentCaption.split("\n").length >= 3) {
+      result.push(currentCaption.trim());
+      currentCaption = newLine;
+    } else {
+      currentCaption += (currentCaption.length > 0 ? "\n" : "") + newLine;
+    }
+  });
+
+  if (currentCaption) {
+    result.push(currentCaption.trim());
   }
-  result.push(filteredLines.join('\n'));
 
-  return result.join('\n\n');
+  return result.join("\n\n");
 }
+
 
 // Function to calculate timestamp difference
 function getTimestampDifference(timestamp1, timestamp2) {

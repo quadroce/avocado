@@ -182,7 +182,7 @@ function splitLongCaptions(caption) {
   let startTime = caption.timestamp.split(' --> ')[0];
 
   lines.forEach((line, index) => {
-    if (lineCount >= 2 || (currentCaption && line.startsWith(">> "))) {
+    if (lineCount >= 4 || (currentCaption && line.startsWith(">> "))) {
       if (currentCaption) {
         const endTime = index === lines.length - 1 ?
           caption.timestamp.split(' --> ')[1] :
@@ -214,6 +214,7 @@ function splitLongCaptions(caption) {
 
   return result;
 }
+
 
 function getAdjustedTimestamp(startTimestamp, millisToAdd) {
   const [hours, minutes, seconds, milliseconds] = startTimestamp.split(/[:.]/).map(Number);
@@ -277,38 +278,47 @@ function correctText(text) {
   const maxCharsPerLine = 32;
   const lines = text.split('\n');
   let result = [];
-  let currentLine = '';
+  let currentCaption = [];
 
   lines.forEach(line => {
     const isTimestamp = line.includes('-->');
 
     if (isTimestamp) {
-      if (currentLine) {
-        result.push(currentLine);
-        currentLine = '';
+      if (currentCaption.length > 0) {
+        result.push(...currentCaption);
+        currentCaption = [];
       }
       result.push(line);
     } else {
       const words = line.split(' ');
+      let currentLine = '';
+
       words.forEach(word => {
         if ((word.startsWith('>>') || word.startsWith('--')) && currentLine.length > 0) {
-          result.push(currentLine);
+          currentCaption.push(currentLine);
           currentLine = word;
         } else if (currentLine.length + word.length + 1 > maxCharsPerLine) {
-          result.push(currentLine);
+          currentCaption.push(currentLine);
           currentLine = word;
         } else {
           currentLine += (currentLine ? ' ' : '') + word;
         }
       });
 
-      if (lines.indexOf(line) === lines.length - 1) {
-        if (currentLine) {
-          result.push(currentLine);
-        }
+      if (currentLine) {
+        currentCaption.push(currentLine);
+      }
+
+      if (currentCaption.length >= 4) {
+        result.push(...currentCaption);
+        currentCaption = [];
       }
     }
   });
+
+  if (currentCaption.length > 0) {
+    result.push(...currentCaption);
+  }
 
   return result.join('\n');
 }

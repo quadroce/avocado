@@ -1,3 +1,4 @@
+140920240012
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,113 +6,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AVOCADO FIXING LINES</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      color: #333;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    header {
-      background-color: #50b47b;
-      color: white;
-      width: 100%;
-      text-align: center;
-      padding: 20px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    header img {
-      width: 50px;
-      height: auto;
-      vertical-align: middle;
-      margin-right: 10px;
-    }
-
-    header h1 {
-      display: inline-block;
-      font-size: 24px;
-      margin: 0;
-      vertical-align: middle;
-    }
-
-    .container {
-      display: flex;
-      justify-content: space-between;
-      width: 80%;
+    /* ... (keep your existing styles) ... */
+    .file-upload {
       margin: 20px 0;
     }
-
-    textarea, pre {
-      width: 48%;
-      height: auto;
-      min-height: 300px;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      background-color: #fff;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      font-family: 'Courier New', Courier, monospace;
+    #fileInput {
+      display: none;
     }
-
-    .buttons {
-      margin: 20px;
-    }
-
-    .buttons button {
+    .file-upload label {
       background-color: #50b47b;
       color: white;
-      border: none;
       padding: 10px 20px;
-      margin-right: 10px;
       border-radius: 5px;
       cursor: pointer;
-      font-size: 16px;
     }
-
-    .buttons button:hover {
+    .file-upload label:hover {
       background-color: #429c68;
     }
   </style>
-
 </head>
 <body>
-
   <header>
     <img src="https://cdn.pixabay.com/photo/2023/08/12/16/45/avocado-8186060_1280.png" alt="Avocado">
     <h1>AVOCADO FIXING LINES</h1>
-    <h5>V.0.5.0 by Francesco Mucci</h5>
-<h6>Max 32 Char, Capitalize first string, fixing the short captions</h6>
+    <h5>V.0.5.1 by Francesco Mucci</h5>
+    <h6>Max 32 Char, Capitalize first string, fixing the short captions</h6>
   </header>
-
+  <div class="file-upload">
+    <label for="fileInput">Choose VTT File</label>
+    <input type="file" id="fileInput" accept=".vtt">
+  </div>
   <div class="buttons">
     <button id="formatButton">Avocadize it!</button>
     <button onclick="copyOutput()">Copy</button>
     <button onclick="downloadOutput()">Download</button>
   </div>
-
   <div class="container">
     <textarea style="margin:16px" id="inputText">
     00:00:01.134 --> 00:00:01.152 line:-1
 >> Announcer: Was she almost
-
 00:00:02.669 --> 00:00:03.670 line:-1
 blinded by beauty?
-
 00:00:03.737 --> 00:00:04.871 line:-1
 >> I have thin eyebrows, so I</textarea>
     <pre id="outputText" style="background:white">Output will appear here!</pre>
   </div>
-
   <script src="https://unpkg.com/compromise@14.14.0/builds/compromise.js"></script>
- 
   <script src="correct.js"></script>
  <footer>
-    <p>TEST 09122024.0.1</p>
-</footer>
+    <p>TEST 09122024.0.2</p>
+ </footer>
 </body>
 </html>

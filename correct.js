@@ -1,4 +1,4 @@
-130920241433
+130920241440
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
   const processedCaptions = formatText(inputText);

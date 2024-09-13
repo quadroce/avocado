@@ -140,8 +140,8 @@ function getMidTimestamp(startTimestamp, splitDuration) {
   return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}.${String(newMilliseconds).padStart(3, '0')}`;
 }
 
-// Function to split captions longer than 3 lines, ensuring ">>" starts new lines and is preserved
-/ Function to split long captions, ensuring ">>" and "--" start new lines and are preserved
+
+// Function to split long captions, ensuring ">>" and "--" start new lines and are preserved
 function splitLongCaptions(text) {
   // Split the text by ">>" and "--" to handle different speakers
   let lines = text.split(/(?=>>|--)/).map(line => line.trim()).filter(line => line.length > 0);

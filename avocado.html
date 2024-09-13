@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AVOCADO FIXING LINES</title>
   <style>
-  /* Reset and base styles */
+/* Reset and base styles */
 * {
   margin: 0;
   padding: 0;
@@ -78,10 +78,10 @@ textarea, #outputText {
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin-bottom: 20px;
+  margin: 20px 0;
 }
 
-button {
+button, .file-upload label {
   background-color: #50b47b;
   color: white;
   border: none;
@@ -89,33 +89,28 @@ button {
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  font-size: 14px;
 }
 
-button:hover {
+button:hover, .file-upload label:hover {
   background-color: #429c68;
+}
+
+#formatButton {
+  background-color: #2e8b57; /* A different shade of green */
+}
+
+#formatButton:hover {
+  background-color: #26734a;
 }
 
 /* File upload styles */
 .file-upload {
-  text-align: center;
-  margin: 20px 0;
+  display: inline-block;
 }
 
 #fileInput {
   display: none;
-}
-
-.file-upload label {
-  background-color: #50b47b;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.file-upload label:hover {
-  background-color: #429c68;
 }
 
 /* Footer styles */
@@ -136,6 +131,14 @@ footer {
     width: 100%;
     margin-bottom: 20px;
   }
+  
+  .buttons {
+    flex-wrap: wrap;
+  }
+  
+  button, .file-upload label {
+    flex: 1 0 40%;
+  }
 }
   </style>
 </head>
@@ -146,15 +149,15 @@ footer {
     <h5>V.0.5.1 by Francesco Mucci</h5>
     <h6>Max 32 Char, Capitalize first string, fixing the short captions</h6>
   </header>
+<div class="buttons">
   <div class="file-upload">
-    <label for="fileInput">Choose VTT File</label>
+    <label for="fileInput">Upload VTT File</label>
     <input type="file" id="fileInput" accept=".vtt">
   </div>
-  <div class="buttons">
-    <button id="formatButton">Avocadize it!</button>
-    <button onclick="copyOutput()">Copy</button>
-    <button onclick="downloadOutput()">Download</button>
-  </div>
+  <button id="formatButton">Avocadize it!</button>
+  <button onclick="copyOutput()">Copy</button>
+  <button onclick="downloadOutput()">Download</button>
+</div>
   <div class="container">
     <textarea style="margin:16px" id="inputText">
     00:00:01.134 --> 00:00:01.152 line:-1

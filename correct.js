@@ -1,4 +1,4 @@
-//130920241332
+//130920241334
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
   const processedCaptions = formatText(inputText);
@@ -125,25 +125,30 @@ function getMidTimestamp(startTimestamp, splitDuration) {
   return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}.${String(newMilliseconds).padStart(3, '0')}`;
 }
 
-// Function to split captions longer than 3 lines, ensuring ">>" starts new lines
+// Function to split captions longer than 3 lines, ensuring ">>" starts new lines and is preserved
 function splitLongCaptions(text) {
-  // Split on ">>" to handle speaker changes and ensure each ">>" starts a new line
-  let lines = text.split(/\s*>>\s*/).map(line => line.trim()).filter(line => line.length > 0);
-  
+  // Split the text by ">>" to handle different speakers
+  let lines = text.split(/(?=>>)/).map(line => line.trim()).filter(line => line.length > 0);
+
   let result = [];
   let currentCaption = "";
 
   lines.forEach(line => {
-    let newLine = line.startsWith(">>") ? ">> " + line : line;
+    // Ensure the line starts with ">>" when appropriate
+    if (!line.startsWith(">>")) {
+      line = ">> " + line;
+    }
 
+    // Check if current caption exceeds 3 lines; if so, start a new caption
     if (currentCaption.split("\n").length >= 3) {
       result.push(currentCaption.trim());
-      currentCaption = newLine;
+      currentCaption = line;
     } else {
-      currentCaption += (currentCaption.length > 0 ? "\n" : "") + newLine;
+      currentCaption += (currentCaption.length > 0 ? "\n" : "") + line;
     }
   });
 
+  // Push any remaining lines
   if (currentCaption) {
     result.push(currentCaption.trim());
   }

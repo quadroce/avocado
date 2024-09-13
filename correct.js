@@ -1,5 +1,5 @@
-140920240003
-Complete Caption Processor JavaScript (correct.js)
+//140920240003
+
 
 let uploadedFileName = '';
 

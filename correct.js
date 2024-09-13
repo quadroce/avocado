@@ -1,4 +1,5 @@
-//2355
+//130920241107
+// Function to format and display text with line breaks at ">>" or "--"
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
   const processedCaptions = formatText(inputText);
@@ -8,24 +9,21 @@ function formatAndDisplayText() {
     if (caption.type === 'header') {
       return caption.content;
     }
-    return `${caption.timestamp}\n${caption.text}`;
+
+    // Split text into lines based on timestamps and special markers
+    const lines = caption.text.split(/(\d{1,2}:\d{2}:\d{2}\.\d{3} --> \d{1,2}:\d{2}:\d{2}\.\d{3})|>>|--/g);
+
+    // Ensure maximum 3 lines per caption
+    const formattedLines = lines.slice(0, 3).map(line => line.trim());
+
+    return `${caption.timestamp}\n${formattedLines.join('\n')}`;
   }).join('\n\n');
 
   const correctedText = correctText(formattedText);
-  document.getElementById("outputText").textContent = addNewLineBeforeTimestamps(correctedText);
+  document.getElementById("outputText").textContent = correctedText;
 }
 
-// Function to add a newline before every timestamp
-function addNewLineBeforeTimestamps(text) {
-  const timestampRegex = /(\d{1,2}:\d{2}:\d{2}\.\d{3} --> \d{1,2}:\d{2}:\d{2}\.\d{3})/g;
-  return text.replace(timestampRegex, '\n\n$1');
-}
-// Process the input text and identify captions for merging
-function cleanTimestamp(timestamp) {
-  const parts = timestamp.split(' ');
-  return parts[0]; // Assuming the timestamp is the first part
-}
-
+// Function to process the input text and identify captions for merging
 function formatText(text) {
   if (typeof text !== 'string') {
     throw new Error('Input text must be a string');
@@ -70,6 +68,7 @@ function formatText(text) {
   return formattedText;
 }
 
+// Helper functions (unchanged from original code)
 function isTimestamp(line) {
   return /^\d{1,2}:\d{2}:\d{2}\.\d{3} --> \d{1,2}:\d{2}:\d{2}\.\d{3}/.test(line);
 }
@@ -84,16 +83,6 @@ function processCaption(caption) {
   }
 
   return { ...caption, duration, shouldMerge: false };
-}
-
-function getTimestampDifference(timestamp1, timestamp2) {
-  const time1 = timestamp1.split(/[:.]/);
-  const time2 = timestamp2.split(/[:.]/);
-
-  const ms1 = (parseInt(time1[0]) * 3600000) + (parseInt(time1[1]) * 60000) + (parseInt(time1[2]) * 1000) + parseInt(time1[3]);
-  const ms2 = (parseInt(time2[0]) * 3600000) + (parseInt(time2[1]) * 60000) + (parseInt(time2[2]) * 1000) + parseInt(time2[3]);
-
-  return ms2 - ms1;
 }
 
 function mergeCaptions(captions) {

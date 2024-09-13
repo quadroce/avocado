@@ -1,4 +1,4 @@
-130920242328
+130920242352
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
   const processedCaptions = formatText(inputText);
@@ -179,33 +179,32 @@ function splitLongCaptions(caption) {
   let result = [];
   let currentCaption = [];
   let startTime = caption.timestamp.split(' --> ')[0];
+  let endTime = caption.timestamp.split(' --> ')[1];
+
+  const pushCurrentCaption = (end) => {
+    if (currentCaption.length > 0) {
+      result.push({
+        timestamp: `${startTime} --> ${end}`,
+        text: currentCaption.join('\n'),
+        duration: getTimestampDifference(startTime, end),
+        shouldMerge: false
+      });
+      startTime = addMillisecondsToTimestamp(end, 10); // Add 10ms gap
+    }
+  };
 
   lines.forEach((line, index) => {
-    if (currentCaption.length >= 4 || (currentCaption.length > 0 && line.startsWith(">> "))) {
-      if (currentCaption.length > 0) {
-        const endTime = index === lines.length - 1 ?
-          caption.timestamp.split(' --> ')[1] :
-          getAdjustedTimestamp(startTime, 2000);
-        result.push({
-          timestamp: `${startTime} --> ${endTime}`,
-          text: currentCaption.join('\n'),
-          duration: 2000,
-          shouldMerge: false
-        });
-        startTime = endTime;
-        currentCaption = [];
-      }
-    }
     currentCaption.push(line);
+
+    if (currentCaption.length === 3 || index === lines.length - 1 || line.startsWith(">> ")) {
+      const currentEnd = index === lines.length - 1 ? endTime : getAdjustedTimestamp(startTime, 1200);
+      pushCurrentCaption(currentEnd);
+      currentCaption = [];
+    }
   });
 
   if (currentCaption.length > 0) {
-    result.push({
-      timestamp: `${startTime} --> ${caption.timestamp.split(' --> ')[1]}`,
-      text: currentCaption.join('\n'),
-      duration: getTimestampDifference(startTime, caption.timestamp.split(' --> ')[1]),
-      shouldMerge: false
-    });
+    pushCurrentCaption(endTime);
   }
 
   return result;
@@ -293,16 +292,25 @@ function mergeCaptions(captions) {
 
     if (!currentMerge) {
       currentMerge = { ...caption };
-      totalDuration = 0;
+      totalDuration = caption.duration;
     } else {
       const [currentStart] = currentMerge.timestamp.split(' --> ');
       const [, nextEnd] = caption.timestamp.split(' --> ');
-      currentMerge.timestamp = `${currentStart} --> ${nextEnd}`;
-      currentMerge.text += '\n' + caption.text;
-      totalDuration += caption.duration;
+      const newDuration = getTimestampDifference(currentStart, nextEnd);
+
+      if (newDuration >= 1200 && newDuration <= 7000 && currentMerge.text.split('\n').length + caption.text.split('\n').length <= 3) {
+        currentMerge.timestamp = `${currentStart} --> ${nextEnd}`;
+        currentMerge.text += '\n' + caption.text;
+        currentMerge.duration = newDuration;
+        totalDuration = newDuration;
+      } else {
+        mergedCaptions.push(currentMerge);
+        currentMerge = { ...caption };
+        totalDuration = caption.duration;
+      }
     }
 
-    if (!caption.shouldMerge || totalDuration > 1200) {
+    if (totalDuration > 7000 || currentMerge.text.split('\n').length > 3) {
       mergedCaptions.push(currentMerge);
       currentMerge = null;
       totalDuration = 0;
@@ -314,6 +322,20 @@ function mergeCaptions(captions) {
   }
 
   return mergedCaptions;
+}
+
+function addMillisecondsToTimestamp(timestamp, milliseconds) {
+  const [hours, minutes, seconds, currentMilliseconds] = timestamp.split(/[:.]/).map(Number);
+  let totalMilliseconds = (hours * 3600000) + (minutes * 60000) + (seconds * 1000) + currentMilliseconds + milliseconds;
+
+  const newHours = Math.floor(totalMilliseconds / 3600000);
+  totalMilliseconds %= 3600000;
+  const newMinutes = Math.floor(totalMilliseconds / 60000);
+  totalMilliseconds %= 60000;
+  const newSeconds = Math.floor(totalMilliseconds / 1000);
+  const newMilliseconds = totalMilliseconds % 1000;
+
+  return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}.${String(newMilliseconds).padStart(3, '0')}`;
 }
 
 function copyOutput() {

@@ -1,4 +1,4 @@
-//130920241334
+//130920241345
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
   const processedCaptions = formatText(inputText);
@@ -73,6 +73,7 @@ function isTimestamp(line) {
   return /^\d{1,2}:\d{2}:\d{2}\.\d{3} --> \d{1,2}:\d{2}:\d{2}\.\d{3}/.test(line);
 }
 
+// Update the processCaption function to use the new splitCaptionByDuration
 function processCaption(caption) {
   const [start, end] = caption.timestamp.split(' --> ');
   const duration = getTimestampDifference(start, end);
@@ -87,13 +88,14 @@ function processCaption(caption) {
   return { ...caption, duration, shouldMerge: false };
 }
 
-// Function to split long captions by duration
+// Function to split captions by duration
 function splitCaptionByDuration(caption, maxDuration) {
   const [start, end] = caption.timestamp.split(' --> ');
   const totalDuration = getTimestampDifference(start, end);
 
   const splitPoint = totalDuration / 2;
   const splitTimestamp = getMidTimestamp(start, splitPoint);
+  const gapEndTimestamp = addFramesToTimestamp(splitTimestamp, 4);
 
   const firstPart = {
     timestamp: `${start} --> ${splitTimestamp}`,
@@ -102,12 +104,25 @@ function splitCaptionByDuration(caption, maxDuration) {
   };
 
   const secondPart = {
-    timestamp: `${splitTimestamp} --> ${end}`,
+    timestamp: `${gapEndTimestamp} --> ${end}`,
     text: caption.text.substring(Math.floor(caption.text.length / 2)).trim(),
-    duration: totalDuration - splitPoint
+    duration: totalDuration - splitPoint - 166 // Assuming 24 fps, 4 frames = 166ms
   };
 
   return [firstPart, secondPart];
+}
+
+// Function to add frames to a timestamp
+function addFramesToTimestamp(timestamp, frames) {
+  const [hours, minutes, seconds, milliseconds] = timestamp.split(/[:.]/).map(Number);
+  const totalMs = (hours * 3600000) + (minutes * 60000) + (seconds * 1000) + milliseconds + (frames * 1000 / 24);
+
+  const newHours = Math.floor(totalMs / 3600000);
+  const newMinutes = Math.floor((totalMs % 3600000) / 60000);
+  const newSeconds = Math.floor((totalMs % 60000) / 1000);
+  const newMilliseconds = Math.floor(totalMs % 1000);
+
+  return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}.${String(newMilliseconds).padStart(3, '0')}`;
 }
 
 // Function to get the midpoint timestamp
@@ -126,16 +141,17 @@ function getMidTimestamp(startTimestamp, splitDuration) {
 }
 
 // Function to split captions longer than 3 lines, ensuring ">>" starts new lines and is preserved
+/ Function to split long captions, ensuring ">>" and "--" start new lines and are preserved
 function splitLongCaptions(text) {
-  // Split the text by ">>" to handle different speakers
-  let lines = text.split(/(?=>>)/).map(line => line.trim()).filter(line => line.length > 0);
+  // Split the text by ">>" and "--" to handle different speakers
+  let lines = text.split(/(?=>>|--)/).map(line => line.trim()).filter(line => line.length > 0);
 
   let result = [];
   let currentCaption = "";
 
   lines.forEach(line => {
-    // Ensure the line starts with ">>" when appropriate
-    if (!line.startsWith(">>")) {
+    // Ensure the line starts with ">>" or "--" when appropriate
+    if (!line.startsWith(">>") && !line.startsWith("--")) {
       line = ">> " + line;
     }
 
@@ -155,6 +171,7 @@ function splitLongCaptions(text) {
 
   return result.join("\n\n");
 }
+
 
 
 // Function to calculate timestamp difference

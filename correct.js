@@ -1,4 +1,4 @@
-130920241401
+130920241424
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
   const processedCaptions = formatText(inputText);
@@ -92,21 +92,18 @@ function splitCaptionByDuration(caption, maxDuration) {
   const splitTimestamp = getMidTimestamp(start, splitPoint);
   const gapEndTimestamp = addFramesToTimestamp(splitTimestamp, 4);
 
-  // Extract alignment and positioning info
-  const alignInfo = caption.timestamp.split(' --> ')[1].split(' ').slice(1).join(' ');
-
   // Find a good splitting point
   let splitIndex = findSplitIndex(caption.text);
 
   const firstPart = {
-    timestamp: `${start} --> ${splitTimestamp} ${alignInfo}`,
+    timestamp: `${start} --> ${splitTimestamp}`,
     text: caption.text.substring(0, splitIndex).trim(),
     duration: splitPoint,
     shouldMerge: false
   };
 
   const secondPart = {
-    timestamp: `${gapEndTimestamp} --> ${end} ${alignInfo}`,
+    timestamp: `${gapEndTimestamp} --> ${end}`,
     text: caption.text.substring(splitIndex).trim(),
     duration: totalDuration - splitPoint - 166, // Assuming 24 fps, 4 frames = 166ms
     shouldMerge: false

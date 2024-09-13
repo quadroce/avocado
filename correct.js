@@ -1,4 +1,8 @@
 140920240003
+Complete Caption Processor JavaScript (correct.js)
+
+let uploadedFileName = '';
+
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
   const processedCaptions = formatText(inputText);
@@ -12,7 +16,8 @@ function formatAndDisplayText() {
   }).join('\n\n');
 
   const correctedText = correctText(formattedText);
-  document.getElementById("outputText").textContent = addNewLineBeforeTimestamps(correctedText);
+  const finalText = addNewLineBeforeTimestamps(correctedText);
+  document.getElementById("outputText").textContent = finalText;
 }
 
 function addNewLineBeforeTimestamps(text) {
@@ -350,6 +355,21 @@ function addMillisecondsToTimestamp(timestamp, milliseconds) {
 
   return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}.${String(newMilliseconds).padStart(3, '0')}`;
 }
+
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (file) {
+    // Store the uploaded file name without the extension
+    uploadedFileName = file.name.replace(/\.[^/.]+$/, "");
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('inputText').value = e.target.result;
+    };
+    reader.readAsText(file);
+  }
+}
+
 function copyOutput() {
   const outputText = document.getElementById('outputText').textContent;
   navigator.clipboard.writeText(outputText).then(() => {
@@ -363,11 +383,19 @@ function downloadOutput() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'output.vtt';
+  
+  // Use the uploaded filename if available, otherwise use a default name
+  const downloadFileName = uploadedFileName ? `${uploadedFileName}_avocado.vtt` : 'captions_avocado.vtt';
+  a.download = downloadFileName;
+  
   a.click();
   URL.revokeObjectURL(url);
 }
 
-document.getElementById('formatButton').addEventListener('click', formatAndDisplayText);
-document.getElementById('copyButton')?.addEventListener('click', copyOutput);
-document.getElementById('downloadButton')?.addEventListener('click', downloadOutput);
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+  document.getElementById('formatButton').addEventListener('click', formatAndDisplayText);
+  document.getElementById('copyButton')?.addEventListener('click', copyOutput);
+  document.getElementById('downloadButton')?.addEventListener('click', downloadOutput);
+});

@@ -1,4 +1,4 @@
-130920241451
+130920242328
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
   const processedCaptions = formatText(inputText);
@@ -16,8 +16,8 @@ function formatAndDisplayText() {
 }
 
 function addNewLineBeforeTimestamps(text) {
-  const timestampRegex = /(\d{1,2}:\d{2}:\d{2}\.\d{3} --> \d{1,2}:\d{2}:\d{2}\.\d{3})/g;
-  return text.replace(timestampRegex, '\n\n$1');
+  const timestampRegex = /(\d{1,2}:\d{2}:\d{2}\.\d{3} --> \d{1,2}:\d{2}:\d{2}\.\d{3}.*)/g;
+  return text.replace(timestampRegex, '\n$1');
 }
 
 function cleanTimestamp(timestamp) {
@@ -220,10 +220,10 @@ function correctText(text) {
   lines.forEach(line => {
     if (line.includes('-->')) {
       if (currentCaption.length > 0) {
-        result.push(...currentCaption, '');
+        result.push(...currentCaption);
         currentCaption = [];
       }
-      result.push(line, '');
+      result.push(line);
     } else {
       const words = line.split(' ');
       let currentLine = '';
@@ -245,19 +245,18 @@ function correctText(text) {
       }
 
       if (currentCaption.length >= 4 || lines.indexOf(line) === lines.length - 1) {
-        result.push(...currentCaption, '');
+        result.push(...currentCaption);
         currentCaption = [];
       }
     }
   });
 
   if (currentCaption.length > 0) {
-    result.push(...currentCaption, '');
+    result.push(...currentCaption);
   }
 
   return result.join('\n').replace(/\n{3,}/g, '\n\n');
 }
-
 
 function getAdjustedTimestamp(startTimestamp, millisToAdd) {
   const [hours, minutes, seconds, milliseconds] = startTimestamp.split(/[:.]/).map(Number);
@@ -316,8 +315,6 @@ function mergeCaptions(captions) {
 
   return mergedCaptions;
 }
-
-
 
 function copyOutput() {
   const outputText = document.getElementById('outputText').textContent;

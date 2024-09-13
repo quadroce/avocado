@@ -1,4 +1,5 @@
-//130920241202
+//130920241204
+// Function to format and display text with line breaks at ">>" or "--"
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
   const processedCaptions = formatText(inputText);
@@ -8,11 +9,49 @@ function formatAndDisplayText() {
     if (caption.type === 'header') {
       return caption.content;
     }
-    return `${caption.timestamp}\n${caption.text}`;
+
+    // Split text into lines based on timestamps and special markers
+    const lines = caption.text.split(/(\d{1,2}:\d{2}:\d{2}\.\d{3} --> \d{1,2}:\d{2}:\d{2}\.\d{3})|>>|--/g);
+
+    // Ensure maximum 3 lines per caption
+    const formattedLines = lines.slice(0, 3).map(line => line.trim());
+
+    // Check for empty lines and remove them
+    formattedLines = formattedLines.filter(line => line !== '');
+
+    // Split long lines in the middle
+    const splitLines = formattedLines.flatMap(line => {
+      if (line.length > 32) {
+        const middleIndex = Math.ceil(line.length / 2);
+        return [line.slice(0, middleIndex), line.slice(middleIndex)];
+      } else {
+        return [line];
+      }
+    });
+
+    // Ensure maximum 3 lines per caption after splitting
+    const finalLines = splitLines.slice(0, 3);
+
+    return `${caption.timestamp}\n${finalLines.join('\n')}`;
   }).join('\n\n');
 
-  const correctedText = correctText(formattedText);
-  document.getElementById("outputText").textContent = addNewLineBeforeTimestamps(correctedText);
+  // Check for captions with duration less than 1200 or more than 7000 milliseconds
+  const filteredText = formattedText.filter(caption => {
+    const [start, end] = caption.split(' --> ');
+    const duration = getTimestampDifference(start, end);
+    return duration >= 1200 && duration <= 7000;
+  });
+
+  // Check for ">>" not at the beginning of the line
+  const finalText = filteredText.filter(caption => {
+    const lines = caption.split('\n');
+    return lines.every(line => {
+      const trimmedLine = line.trim();
+      return trimmedLine.startsWith('>>') || !trimmedLine.includes('>>');
+    });
+  });
+
+  document.getElementById("outputText").textContent = finalText.join('\n\n');
 }
 
 // Function to add a newline before every timestamp

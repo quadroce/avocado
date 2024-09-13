@@ -1,4 +1,4 @@
-//130920241315
+//130920241322
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
   const processedCaptions = formatText(inputText);
@@ -188,7 +188,7 @@ function mergeCaptions(captions) {
   return mergedCaptions;
 }
 
-// Function to correct text formatting
+// Function to correct text formatting and ensure ">>" starts each line
 function correctText(text) {
   const maxCharsPerLine = 32;
   const lines = text.split('\n');
@@ -207,7 +207,11 @@ function correctText(text) {
     } else {
       const words = line.split(' ');
       words.forEach(word => {
-        if (currentLine.length + word.length + 1 > maxCharsPerLine) {
+        // Ensure the ">>" starts at the beginning of the line
+        if (word.startsWith('>>') && currentLine.length > 0) {
+          result.push(currentLine);
+          currentLine = word;
+        } else if (currentLine.length + word.length + 1 > maxCharsPerLine) {
           result.push(currentLine);
           currentLine = word;
         } else {
@@ -225,7 +229,6 @@ function correctText(text) {
 
   return result.join('\n');
 }
-
 
 // Function to copy the output to clipboard
 function copyOutput() {

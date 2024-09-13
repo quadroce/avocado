@@ -172,7 +172,7 @@ function getMidTimestamp(startTimestamp, splitDuration) {
 }
 
 function splitLongCaptions(caption) {
-  const lines = caption.text.split(/(?=(?:^|\n)(?:>>|--))|(?<=\S)(?=\s+(?:>>|--))/g)
+  const lines = caption.text.split(/\n/g)
     .map(line => line.trim())
     .filter(line => line.length > 0);
 
@@ -182,14 +182,10 @@ function splitLongCaptions(caption) {
   let startTime = caption.timestamp.split(' --> ')[0];
 
   lines.forEach((line, index) => {
-    if (!line.startsWith(">>") && !line.startsWith("--")) {
-      line = "-- " + line;
-    }
-
-    if (lineCount >= 3 || (currentCaption && (line.startsWith(">>") || line.startsWith("--")))) {
+    if (lineCount >= 2 || (currentCaption && line.startsWith(">> "))) {
       if (currentCaption) {
-        const endTime = index === lines.length - 1 ? 
-          caption.timestamp.split(' --> ')[1] : 
+        const endTime = index === lines.length - 1 ?
+          caption.timestamp.split(' --> ')[1] :
           getAdjustedTimestamp(startTime, 2000);
         result.push({
           timestamp: `${startTime} --> ${endTime}`,

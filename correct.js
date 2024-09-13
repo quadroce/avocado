@@ -177,42 +177,85 @@ function splitLongCaptions(caption) {
     .filter(line => line.length > 0);
 
   let result = [];
-  let currentCaption = "";
-  let lineCount = 0;
+  let currentCaption = [];
   let startTime = caption.timestamp.split(' --> ')[0];
 
   lines.forEach((line, index) => {
-    if (lineCount >= 4 || (currentCaption && line.startsWith(">> "))) {
-      if (currentCaption) {
+    if (currentCaption.length >= 4 || (currentCaption.length > 0 && line.startsWith(">> "))) {
+      if (currentCaption.length > 0) {
         const endTime = index === lines.length - 1 ?
           caption.timestamp.split(' --> ')[1] :
           getAdjustedTimestamp(startTime, 2000);
         result.push({
           timestamp: `${startTime} --> ${endTime}`,
-          text: currentCaption.trim(),
+          text: currentCaption.join('\n'),
           duration: 2000,
           shouldMerge: false
         });
         startTime = endTime;
+        currentCaption = [];
       }
-      currentCaption = line;
-      lineCount = 1;
-    } else {
-      currentCaption += (currentCaption ? "\n" : "") + line;
-      lineCount++;
     }
+    currentCaption.push(line);
   });
 
-  if (currentCaption) {
+  if (currentCaption.length > 0) {
     result.push({
       timestamp: `${startTime} --> ${caption.timestamp.split(' --> ')[1]}`,
-      text: currentCaption.trim(),
+      text: currentCaption.join('\n'),
       duration: getTimestampDifference(startTime, caption.timestamp.split(' --> ')[1]),
       shouldMerge: false
     });
   }
 
   return result;
+}
+
+function correctText(text) {
+  const maxCharsPerLine = 32;
+  const lines = text.split('\n');
+  let result = [];
+  let currentCaption = [];
+
+  lines.forEach(line => {
+    if (line.includes('-->')) {
+      if (currentCaption.length > 0) {
+        result.push(...currentCaption, '');
+        currentCaption = [];
+      }
+      result.push(line, '');
+    } else {
+      const words = line.split(' ');
+      let currentLine = '';
+
+      words.forEach(word => {
+        if ((word.startsWith('>>') || word.startsWith('--')) && currentLine.length > 0) {
+          currentCaption.push(currentLine);
+          currentLine = word;
+        } else if (currentLine.length + word.length + 1 > maxCharsPerLine) {
+          if (currentLine) currentCaption.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine += (currentLine ? ' ' : '') + word;
+        }
+      });
+
+      if (currentLine) {
+        currentCaption.push(currentLine);
+      }
+
+      if (currentCaption.length >= 4 || lines.indexOf(line) === lines.length - 1) {
+        result.push(...currentCaption, '');
+        currentCaption = [];
+      }
+    }
+  });
+
+  if (currentCaption.length > 0) {
+    result.push(...currentCaption, '');
+  }
+
+  return result.join('\n').replace(/\n{3,}/g, '\n\n');
 }
 
 
@@ -274,54 +317,7 @@ function mergeCaptions(captions) {
   return mergedCaptions;
 }
 
-function correctText(text) {
-  const maxCharsPerLine = 32;
-  const lines = text.split('\n');
-  let result = [];
-  let currentCaption = [];
 
-  lines.forEach(line => {
-    const isTimestamp = line.includes('-->');
-
-    if (isTimestamp) {
-      if (currentCaption.length > 0) {
-        result.push(...currentCaption);
-        currentCaption = [];
-      }
-      result.push(line);
-    } else {
-      const words = line.split(' ');
-      let currentLine = '';
-
-      words.forEach(word => {
-        if ((word.startsWith('>>') || word.startsWith('--')) && currentLine.length > 0) {
-          currentCaption.push(currentLine);
-          currentLine = word;
-        } else if (currentLine.length + word.length + 1 > maxCharsPerLine) {
-          currentCaption.push(currentLine);
-          currentLine = word;
-        } else {
-          currentLine += (currentLine ? ' ' : '') + word;
-        }
-      });
-
-      if (currentLine) {
-        currentCaption.push(currentLine);
-      }
-
-      if (currentCaption.length >= 4) {
-        result.push(...currentCaption);
-        currentCaption = [];
-      }
-    }
-  });
-
-  if (currentCaption.length > 0) {
-    result.push(...currentCaption);
-  }
-
-  return result.join('\n');
-}
 
 function copyOutput() {
   const outputText = document.getElementById('outputText').textContent;

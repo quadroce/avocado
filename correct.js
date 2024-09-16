@@ -1,4 +1,4 @@
-//160920240956
+//160920241027
 
 
 let uploadedFileName = '';
@@ -201,8 +201,8 @@ function splitLongCaptions(caption) {
   lines.forEach((line, index) => {
     currentCaption.push(line);
 
-    if (currentCaption.length === 3 || index === lines.length - 1 || line.startsWith(">> ")) {
-      const currentEnd = index === lines.length - 1 ? endTime : getAdjustedTimestamp(startTime, 1200);
+    if (currentCaption.length === 2 || index === lines.length - 1 || line.startsWith(">> ")) {
+      const currentEnd = index === lines.length - 1 ? endTime : getAdjustedTimestamp(startTime, 5000);
       pushCurrentCaption(currentEnd);
       currentCaption = [];
     }
@@ -248,7 +248,7 @@ function correctText(text) {
         currentCaption.push(currentLine);
       }
 
-      if (currentCaption.length >= 3 || lines.indexOf(line) === lines.length - 1) {
+      if (currentCaption.length >= 2 || lines.indexOf(line) === lines.length - 1) {
         result.push(...currentCaption);
         currentCaption = [];
       }
@@ -310,30 +310,28 @@ function mergeCaptions(captions) {
       currentMerge = { ...caption };
       lineCount = captionLines.length;
     } else {
-      let availableLines = 3 - lineCount;
+      let availableLines = 2 - lineCount;
       let linesToAdd = Math.min(availableLines, captionLines.length);
 
-      if (linesToAdd > 0) {
+      if (linesToAdd > 0 && getTimestampDifference(currentMerge.timestamp.split(' --> ')[0], caption.timestamp.split(' --> ')[1]) <= 5000) {
         const [currentStart] = currentMerge.timestamp.split(' --> ');
         const [, nextEnd] = caption.timestamp.split(' --> ');
         currentMerge.timestamp = `${currentStart} --> ${nextEnd}`;
         currentMerge.text += '\n' + captionLines.slice(0, linesToAdd).join('\n');
         currentMerge.duration = getTimestampDifference(currentStart, nextEnd);
         lineCount += linesToAdd;
-      }
-
-      if (linesToAdd < captionLines.length) {
+      } else {
         pushCurrentMerge();
         currentMerge = {
           ...caption,
-          text: captionLines.slice(linesToAdd).join('\n'),
-          timestamp: `${addMillisecondsToTimestamp(caption.timestamp.split(' --> ')[0], linesToAdd * 1000)} --> ${caption.timestamp.split(' --> ')[1]}`
+          text: captionLines.slice(0, 2).join('\n'),
+          timestamp: caption.timestamp
         };
-        lineCount = captionLines.length - linesToAdd;
+        lineCount = Math.min(captionLines.length, 2);
       }
     }
 
-    if (lineCount === 3) {
+    if (lineCount === 2 || currentMerge.duration > 5000) {
       pushCurrentMerge();
     }
   }

@@ -233,7 +233,7 @@ function correctText(text) {
       let currentLine = '';
 
       words.forEach(word => {
-        if ((word.startsWith('>>') || word.startsWith('--')) && currentLine.length > 0) {
+        if (word.startsWith('>>') && currentLine.length > 0) {
           currentCaption.push(currentLine);
           currentLine = word;
         } else if (currentLine.length + word.length + 1 > maxCharsPerLine) {
@@ -248,7 +248,7 @@ function correctText(text) {
         currentCaption.push(currentLine);
       }
 
-      if (currentCaption.length >= 4 || lines.indexOf(line) === lines.length - 1) {
+      if (currentCaption.length >= 3 || lines.indexOf(line) === lines.length - 1) {
         result.push(...currentCaption);
         currentCaption = [];
       }

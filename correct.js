@@ -42,12 +42,33 @@ function unifyDashes(text) {
 
 function convertToSelectedDash(text, selectedDash) {
   // Convert ">>" back to the selected dash while preserving timestamps
-  return text.split('\n').map(line => {
-    if (!line.includes('-->')) {
-      return line.replace(/^>> /, selectedDash + ' ');
+  // and add a newline before each timestamp
+  let lines = text.split('\n');
+  let result = [];
+  let previousLineWasTimestamp = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    if (line.includes('-->')) {
+      // This is a timestamp line
+      if (!previousLineWasTimestamp && i !== 0) {
+        // Add a newline before the timestamp, but not if it's the first line
+        // or if the previous line was also a timestamp
+        result.push('');
+      }
+      result.push(line);
+      previousLineWasTimestamp = true;
+    } else {
+      // This is not a timestamp line
+      if (!line.includes('-->')) {
+        line = line.replace(/^>> /, selectedDash + ' ');
+      }
+      result.push(line);
+      previousLineWasTimestamp = false;
     }
-    return line;
-  }).join('\n');
+  }
+
+  return result.join('\n');
 }
 
 function addNewLineBeforeTimestamps(text) {

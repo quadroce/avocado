@@ -1,18 +1,11 @@
-//170920271637 FUNZIONA
-//170920271652
+//160920241027
 
 
 let uploadedFileName = '';
 
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
-  const selectedDash = document.getElementById("speakerDashSelector").value;
-
-  // Step 1: Unify all speaker dashes to ">>" (safely)
-  let unifiedText = unifyDashes(inputText);
-
-  // Step 2: Process the captions
-  const processedCaptions = formatText(unifiedText);
+  const processedCaptions = formatText(inputText);
   const mergedCaptions = mergeCaptions(processedCaptions);
 
   const formattedText = mergedCaptions.map(caption => {
@@ -23,52 +16,8 @@ function formatAndDisplayText() {
   }).join('\n\n');
 
   const correctedText = correctText(formattedText);
-
-  // Step 3: Convert back to the selected dash (safely)
-  const finalText = convertToSelectedDash(correctedText, selectedDash);
-
+  const finalText = addNewLineBeforeTimestamps(correctedText);
   document.getElementById("outputText").textContent = finalText;
-}
-
-function unifyDashes(text) {
-  // Convert all speaker dashes to ">>" while preserving timestamps
-  return text.split('\n').map(line => {
-    if (!line.includes('-->')) {
-      return line.replace(/^(>>|--|-)(\s|$)/, '>> ');
-    }
-    return line;
-  }).join('\n');
-}
-
-function convertToSelectedDash(text, selectedDash) {
-  // Convert ">>" back to the selected dash while preserving timestamps
-  // and add a newline before each timestamp
-  let lines = text.split('\n');
-  let result = [];
-  let previousLineWasTimestamp = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
-    if (line.includes('-->')) {
-      // This is a timestamp line
-      if (!previousLineWasTimestamp && i !== 0) {
-        // Add a newline before the timestamp, but not if it's the first line
-        // or if the previous line was also a timestamp
-        result.push('');
-      }
-      result.push(line);
-      previousLineWasTimestamp = true;
-    } else {
-      // This is not a timestamp line
-      if (!line.includes('-->')) {
-        line = line.replace(/^>> /, selectedDash + ' ');
-      }
-      result.push(line);
-      previousLineWasTimestamp = false;
-    }
-  }
-
-  return result.join('\n');
 }
 
 function addNewLineBeforeTimestamps(text) {
@@ -236,35 +185,28 @@ function splitLongCaptions(caption) {
   let currentCaption = [];
   let startTime = caption.timestamp.split(' --> ')[0];
   let endTime = caption.timestamp.split(' --> ')[1];
-  const alignInfo = caption.timestamp.split(' --> ')[1].split(' ').slice(1).join(' ');
 
   const pushCurrentCaption = (end) => {
     if (currentCaption.length > 0) {
       result.push({
-        timestamp: `${startTime} --> ${end} ${alignInfo}`,
+        timestamp: `${startTime} --> ${end}`,
         text: currentCaption.join('\n'),
         duration: getTimestampDifference(startTime, end),
         shouldMerge: false
       });
-      startTime = addFramesToTimestamp(end, 2); // Add 2 frames gap
+      startTime = addMillisecondsToTimestamp(end, 10); // Add 10ms gap
     }
   };
 
-  for (let i = 0; i < lines.length; i++) {
-    currentCaption.push(lines[i]);
+  lines.forEach((line, index) => {
+    currentCaption.push(line);
 
-    if (currentCaption.length === 2 || i === lines.length - 1 || lines[i].startsWith(">> ")) {
-      let currentEnd;
-      if (i === lines.length - 1) {
-        currentEnd = endTime;
-      } else {
-        currentEnd = getAdjustedTimestamp(startTime, 5000);
-        currentEnd = addFramesToTimestamp(currentEnd, -2); // Subtract 2 frames to make room for gap
-      }
+    if (currentCaption.length === 2 || index === lines.length - 1 || line.startsWith(">> ") || line.startsWith("- ") || line.startsWith("-- ")) {
+      const currentEnd = index === lines.length - 1 ? endTime : getAdjustedTimestamp(startTime, 5000);
       pushCurrentCaption(currentEnd);
       currentCaption = [];
     }
-  }
+  });
 
   if (currentCaption.length > 0) {
     pushCurrentCaption(endTime);
@@ -291,7 +233,7 @@ function correctText(text) {
       let currentLine = '';
 
       words.forEach(word => {
-        if (word.startsWith('>>') && currentLine.length > 0) {
+        if ((word.startsWith('>>') || word === '-' || word === '--') && currentLine.length > 0) {
           currentCaption.push(currentLine);
           currentLine = word;
         } else if (currentLine.length + word.length + 1 > maxCharsPerLine) {
@@ -320,6 +262,64 @@ function correctText(text) {
   return result.join('\n').replace(/\n{3,}/g, '\n\n');
 }
 
+function mergeCaptions(captions) {
+  let mergedCaptions = [];
+  let currentMerge = null;
+  let lineCount = 0;
+
+  function pushCurrentMerge() {
+    if (currentMerge) {
+      mergedCaptions.push(currentMerge);
+      currentMerge = null;
+      lineCount = 0;
+    }
+  }
+
+  for (let caption of captions) {
+    if (caption.type === 'header') {
+      pushCurrentMerge();
+      mergedCaptions.push(caption);
+      continue;
+    }
+
+    const captionLines = caption.text.split('\n');
+
+    if (!currentMerge) {
+      currentMerge = { ...caption };
+      lineCount = captionLines.length;
+    } else {
+      let availableLines = 2 - lineCount;
+      let linesToAdd = Math.min(availableLines, captionLines.length);
+
+      const startsWithSpecialChar = captionLines[0].startsWith(">> ") || captionLines[0].startsWith("- ") || captionLines[0].startsWith("-- ");
+
+      if (linesToAdd > 0 && getTimestampDifference(currentMerge.timestamp.split(' --> ')[0], caption.timestamp.split(' --> ')[1]) <= 5000 && !startsWithSpecialChar) {
+        const [currentStart] = currentMerge.timestamp.split(' --> ');
+        const [, nextEnd] = caption.timestamp.split(' --> ');
+        currentMerge.timestamp = `${currentStart} --> ${nextEnd}`;
+        currentMerge.text += '\n' + captionLines.slice(0, linesToAdd).join('\n');
+        currentMerge.duration = getTimestampDifference(currentStart, nextEnd);
+        lineCount += linesToAdd;
+      } else {
+        pushCurrentMerge();
+        currentMerge = {
+          ...caption,
+          text: captionLines.slice(0, 2).join('\n'),
+          timestamp: caption.timestamp
+        };
+        lineCount = Math.min(captionLines.length, 2);
+      }
+    }
+
+    if (lineCount === 2 || currentMerge.duration > 5000) {
+      pushCurrentMerge();
+    }
+  }
+
+  pushCurrentMerge();
+  return mergedCaptions;
+}
+
 function getAdjustedTimestamp(startTimestamp, millisToAdd) {
   const [hours, minutes, seconds, milliseconds] = startTimestamp.split(/[:.]/).map(Number);
   const totalMs = (hours * 3600000) + (minutes * 60000) + (seconds * 1000) + milliseconds + millisToAdd;
@@ -345,11 +345,13 @@ function getTimestampDifference(timestamp1, timestamp2) {
 function mergeCaptions(captions) {
   let mergedCaptions = [];
   let currentMerge = null;
+  let lineCount = 0;
 
   function pushCurrentMerge() {
     if (currentMerge) {
       mergedCaptions.push(currentMerge);
       currentMerge = null;
+      lineCount = 0;
     }
   }
 
@@ -364,24 +366,30 @@ function mergeCaptions(captions) {
 
     if (!currentMerge) {
       currentMerge = { ...caption };
+      lineCount = captionLines.length;
     } else {
-      const [currentStart, currentEnd] = currentMerge.timestamp.split(' --> ');
-      const [nextStart, nextEnd] = caption.timestamp.split(' --> ');
-      const gapDuration = getTimestampDifference(currentEnd, nextStart);
+      let availableLines = 2 - lineCount;
+      let linesToAdd = Math.min(availableLines, captionLines.length);
 
-      if (currentMerge.text.split('\n').length + captionLines.length <= 2 && gapDuration <= 83) { // 83ms is approximately 2 frames at 24fps
-        // Merge if total lines <= 2 and gap is 2 frames or less
+      if (linesToAdd > 0 && getTimestampDifference(currentMerge.timestamp.split(' --> ')[0], caption.timestamp.split(' --> ')[1]) <= 5000) {
+        const [currentStart] = currentMerge.timestamp.split(' --> ');
+        const [, nextEnd] = caption.timestamp.split(' --> ');
         currentMerge.timestamp = `${currentStart} --> ${nextEnd}`;
-        currentMerge.text += '\n' + caption.text;
+        currentMerge.text += '\n' + captionLines.slice(0, linesToAdd).join('\n');
         currentMerge.duration = getTimestampDifference(currentStart, nextEnd);
+        lineCount += linesToAdd;
       } else {
         pushCurrentMerge();
-        currentMerge = { ...caption };
+        currentMerge = {
+          ...caption,
+          text: captionLines.slice(0, 2).join('\n'),
+          timestamp: caption.timestamp
+        };
+        lineCount = Math.min(captionLines.length, 2);
       }
     }
 
-    if (currentMerge.text.split('\n').length > 2 || currentMerge.duration > 5000) {
-      // Split if more than 2 lines or duration > 5 seconds
+    if (lineCount === 2 || currentMerge.duration > 5000) {
       pushCurrentMerge();
     }
   }
@@ -446,7 +454,4 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('formatButton').addEventListener('click', formatAndDisplayText);
   document.getElementById('copyButton')?.addEventListener('click', copyOutput);
   document.getElementById('downloadButton')?.addEventListener('click', downloadOutput);
-  
-  // Add event listener for the speaker dash selector
-  document.getElementById('speakerDashSelector').addEventListener('change', formatAndDisplayText);
 });

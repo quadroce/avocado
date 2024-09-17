@@ -1,4 +1,4 @@
-//160920241027
+//170920271626
 
 
 let uploadedFileName = '';
@@ -185,11 +185,12 @@ function splitLongCaptions(caption) {
   let currentCaption = [];
   let startTime = caption.timestamp.split(' --> ')[0];
   let endTime = caption.timestamp.split(' --> ')[1];
+  const alignInfo = caption.timestamp.split(' --> ')[1].split(' ').slice(1).join(' ');
 
   const pushCurrentCaption = (end) => {
     if (currentCaption.length > 0) {
       result.push({
-        timestamp: `${startTime} --> ${end}`,
+        timestamp: `${startTime} --> ${end} ${alignInfo}`,
         text: currentCaption.join('\n'),
         duration: getTimestampDifference(startTime, end),
         shouldMerge: false
@@ -198,15 +199,15 @@ function splitLongCaptions(caption) {
     }
   };
 
-  lines.forEach((line, index) => {
-    currentCaption.push(line);
+  for (let i = 0; i < lines.length; i++) {
+    currentCaption.push(lines[i]);
 
-    if (currentCaption.length === 2 || index === lines.length - 1 || line.startsWith(">> ")) {
-      const currentEnd = index === lines.length - 1 ? endTime : getAdjustedTimestamp(startTime, 5000);
+    if (currentCaption.length === 2 || i === lines.length - 1 || lines[i].startsWith(">> ")) {
+      const currentEnd = i === lines.length - 1 ? endTime : getAdjustedTimestamp(startTime, 5000);
       pushCurrentCaption(currentEnd);
       currentCaption = [];
     }
-  });
+  }
 
   if (currentCaption.length > 0) {
     pushCurrentCaption(endTime);
@@ -310,7 +311,7 @@ function mergeCaptions(captions) {
       currentMerge = { ...caption };
       lineCount = captionLines.length;
     } else {
-      let availableLines = 2 - lineCount;
+      let availableLines = 4 - lineCount; // Increased max lines to 4
       let linesToAdd = Math.min(availableLines, captionLines.length);
 
       if (linesToAdd > 0 && getTimestampDifference(currentMerge.timestamp.split(' --> ')[0], caption.timestamp.split(' --> ')[1]) <= 5000) {
@@ -324,14 +325,14 @@ function mergeCaptions(captions) {
         pushCurrentMerge();
         currentMerge = {
           ...caption,
-          text: captionLines.slice(0, 2).join('\n'),
+          text: captionLines.join('\n'),
           timestamp: caption.timestamp
         };
-        lineCount = Math.min(captionLines.length, 2);
+        lineCount = captionLines.length;
       }
     }
 
-    if (lineCount === 2 || currentMerge.duration > 5000) {
+    if (lineCount >= 4 || currentMerge.duration > 5000) {
       pushCurrentMerge();
     }
   }

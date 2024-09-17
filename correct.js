@@ -1,11 +1,18 @@
-//170920271637
+//170920271637 FUNZIONA
+//170920271652
 
 
 let uploadedFileName = '';
 
 function formatAndDisplayText() {
   const inputText = document.getElementById("inputText").value;
-  const processedCaptions = formatText(inputText);
+  const selectedDash = document.getElementById("speakerDashSelector").value;
+
+  // Step 1: Unify all speaker dashes to ">>" (safely)
+  let unifiedText = unifyDashes(inputText);
+
+  // Step 2: Process the captions
+  const processedCaptions = formatText(unifiedText);
   const mergedCaptions = mergeCaptions(processedCaptions);
 
   const formattedText = mergedCaptions.map(caption => {
@@ -16,8 +23,31 @@ function formatAndDisplayText() {
   }).join('\n\n');
 
   const correctedText = correctText(formattedText);
-  const finalText = addNewLineBeforeTimestamps(correctedText);
+
+  // Step 3: Convert back to the selected dash (safely)
+  const finalText = convertToSelectedDash(correctedText, selectedDash);
+
   document.getElementById("outputText").textContent = finalText;
+}
+
+function unifyDashes(text) {
+  // Convert all speaker dashes to ">>" while preserving timestamps
+  return text.split('\n').map(line => {
+    if (!line.includes('-->')) {
+      return line.replace(/^(>>|--|-)(\s|$)/, '>> ');
+    }
+    return line;
+  }).join('\n');
+}
+
+function convertToSelectedDash(text, selectedDash) {
+  // Convert ">>" back to the selected dash while preserving timestamps
+  return text.split('\n').map(line => {
+    if (!line.includes('-->')) {
+      return line.replace(/^>> /, selectedDash + ' ');
+    }
+    return line;
+  }).join('\n');
 }
 
 function addNewLineBeforeTimestamps(text) {
@@ -291,7 +321,7 @@ function getTimestampDifference(timestamp1, timestamp2) {
   return ms2 - ms1;
 }
 
-function mergeCaptions(captions) {
+unction mergeCaptions(captions) {
   let mergedCaptions = [];
   let currentMerge = null;
 
@@ -395,4 +425,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('formatButton').addEventListener('click', formatAndDisplayText);
   document.getElementById('copyButton')?.addEventListener('click', copyOutput);
   document.getElementById('downloadButton')?.addEventListener('click', downloadOutput);
+  
+  // Add event listener for the speaker dash selector
+  document.getElementById('speakerDashSelector').addEventListener('change', formatAndDisplayText);
 });

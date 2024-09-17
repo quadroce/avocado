@@ -150,28 +150,39 @@ footer {
     <h6>Max 32 Char, Capitalize first string, fixing the short captions</h6>
   </header>
 <div class="buttons">
-  <div class="file-upload">
-    <label for="fileInput">Upload VTT File</label>
-    <input type="file" id="fileInput" accept=".vtt">
-  </div>
-  <button id="formatButton">Avocadize it!</button>
-  <button onclick="copyOutput()">Copy</button>
-  <button onclick="downloadOutput()">Download</button>
-</div>
-  <div class="container">
-    <textarea style="margin:16px" id="inputText">
-    00:00:01.134 --> 00:00:01.152 line:-1
->> Announcer: Was she almost
-00:00:02.669 --> 00:00:03.670 line:-1
-blinded by beauty?
-00:00:03.737 --> 00:00:04.871 line:-1
->> I have thin eyebrows, so I</textarea>
-    <pre id="outputText" style="background:white">Output will appear here!</pre>
-  </div>
-  <script src="https://unpkg.com/compromise@14.14.0/builds/compromise.js"></script>
-  <script src="correct.js"></script>
- <footer>
-    <p>TEST 09122024.0.2</p>
- </footer>
+        <div class="file-upload">
+            <label for="fileInput">Upload VTT File</label>
+            <input type="file" id="fileInput" accept=".vtt">
+        </div>
+        <button id="formatButton">Avocadize it!</button>
+        <button onclick="copyOutput()">Copy</button>
+        <button onclick="downloadOutput()">Download</button>
+        
+        <!-- New Speaker Dash Selector -->
+        <select id="speakerDashSelector">
+            <option value=">>">Speaker Dash: >></option>
+            <option value="--">Speaker Dash: --</option>
+            <option value="-">Speaker Dash: -</option>
+        </select>
+    </div>
+
+    <div class="container">
+        <textarea style="margin:16px" id="inputText">
+            00:00:01.134 --> 00:00:01.152 line:-1
+            >> Announcer: Was she almost
+            00:00:02.669 --> 00:00:03.670 line:-1
+            blinded by beauty?
+            00:00:03.737 --> 00:00:04.871 line:-1
+            >> I have thin eyebrows, so I
+        </textarea>
+        <pre id="outputText" style="background:white">Output will appear here!</pre>
+    </div>
+
+    <script src="https://unpkg.com/compromise@14.14.0/builds/compromise.js"></script>
+    <script src="correct.js"></script>
+    
+    <footer>
+        <p>TEST 09122024.0.2</p>
+    </footer>
 </body>
 </html>

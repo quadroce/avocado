@@ -1,4 +1,4 @@
-//170920271626
+//170920271637
 
 
 let uploadedFileName = '';
@@ -195,9 +195,32 @@ function splitLongCaptions(caption) {
         duration: getTimestampDifference(startTime, end),
         shouldMerge: false
       });
-      startTime = addMillisecondsToTimestamp(end, 10); // Add 10ms gap
+      startTime = addFramesToTimestamp(end, 2); // Add 2 frames gap
     }
   };
+
+  for (let i = 0; i < lines.length; i++) {
+    currentCaption.push(lines[i]);
+
+    if (currentCaption.length === 2 || i === lines.length - 1 || lines[i].startsWith(">> ")) {
+      let currentEnd;
+      if (i === lines.length - 1) {
+        currentEnd = endTime;
+      } else {
+        currentEnd = getAdjustedTimestamp(startTime, 5000);
+        currentEnd = addFramesToTimestamp(currentEnd, -2); // Subtract 2 frames to make room for gap
+      }
+      pushCurrentCaption(currentEnd);
+      currentCaption = [];
+    }
+  }
+
+  if (currentCaption.length > 0) {
+    pushCurrentCaption(endTime);
+  }
+
+  return result;
+}
 
   for (let i = 0; i < lines.length; i++) {
     currentCaption.push(lines[i]);
@@ -288,13 +311,11 @@ function getTimestampDifference(timestamp1, timestamp2) {
 function mergeCaptions(captions) {
   let mergedCaptions = [];
   let currentMerge = null;
-  let lineCount = 0;
 
   function pushCurrentMerge() {
     if (currentMerge) {
       mergedCaptions.push(currentMerge);
       currentMerge = null;
-      lineCount = 0;
     }
   }
 
@@ -309,30 +330,24 @@ function mergeCaptions(captions) {
 
     if (!currentMerge) {
       currentMerge = { ...caption };
-      lineCount = captionLines.length;
     } else {
-      let availableLines = 4 - lineCount; // Increased max lines to 4
-      let linesToAdd = Math.min(availableLines, captionLines.length);
+      const [currentStart, currentEnd] = currentMerge.timestamp.split(' --> ');
+      const [nextStart, nextEnd] = caption.timestamp.split(' --> ');
+      const gapDuration = getTimestampDifference(currentEnd, nextStart);
 
-      if (linesToAdd > 0 && getTimestampDifference(currentMerge.timestamp.split(' --> ')[0], caption.timestamp.split(' --> ')[1]) <= 5000) {
-        const [currentStart] = currentMerge.timestamp.split(' --> ');
-        const [, nextEnd] = caption.timestamp.split(' --> ');
+      if (currentMerge.text.split('\n').length + captionLines.length <= 2 && gapDuration <= 83) { // 83ms is approximately 2 frames at 24fps
+        // Merge if total lines <= 2 and gap is 2 frames or less
         currentMerge.timestamp = `${currentStart} --> ${nextEnd}`;
-        currentMerge.text += '\n' + captionLines.slice(0, linesToAdd).join('\n');
+        currentMerge.text += '\n' + caption.text;
         currentMerge.duration = getTimestampDifference(currentStart, nextEnd);
-        lineCount += linesToAdd;
       } else {
         pushCurrentMerge();
-        currentMerge = {
-          ...caption,
-          text: captionLines.join('\n'),
-          timestamp: caption.timestamp
-        };
-        lineCount = captionLines.length;
+        currentMerge = { ...caption };
       }
     }
 
-    if (lineCount >= 4 || currentMerge.duration > 5000) {
+    if (currentMerge.text.split('\n').length > 2 || currentMerge.duration > 5000) {
+      // Split if more than 2 lines or duration > 5 seconds
       pushCurrentMerge();
     }
   }

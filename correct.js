@@ -1,4 +1,4 @@
-//170920241601
+//170920241608
 
 
 let uploadedFileName = '';
@@ -16,14 +16,14 @@ function formatAndDisplayText() {
   }).join('\n\n');
 
   const correctedText = correctText(formattedText);
-  document.getElementById("outputText").textContent = correctedText;
+  const finalText = addNewLineBeforeTimestamps(correctedText);
+  document.getElementById("outputText").textContent = finalText;
 }
 
 function addNewLineBeforeTimestamps(text) {
   const timestampRegex = /(\d{1,2}:\d{2}:\d{2}\.\d{3} --> \d{1,2}:\d{2}:\d{2}\.\d{3}.*)/g;
   return text.replace(timestampRegex, '\n$1');
 }
-
 function cleanTimestamp(timestamp) {
   const parts = timestamp.split(' ');
   return parts[0];

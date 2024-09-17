@@ -321,7 +321,7 @@ function getTimestampDifference(timestamp1, timestamp2) {
   return ms2 - ms1;
 }
 
-unction mergeCaptions(captions) {
+function mergeCaptions(captions) {
   let mergedCaptions = [];
   let currentMerge = null;
 

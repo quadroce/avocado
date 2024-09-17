@@ -1,4 +1,4 @@
-//160920241027
+//170920241542
 
 
 let uploadedFileName = '';
@@ -248,10 +248,11 @@ function correctText(text) {
         currentCaption.push(currentLine);
       }
 
-      if (currentCaption.length >= 2 || lines.indexOf(line) === lines.length - 1) {
-        result.push(...currentCaption);
-        currentCaption = [];
-      }
+      // Remove this condition to prevent pushing captions prematurely
+      // if (currentCaption.length >= 2 || lines.indexOf(line) === lines.length - 1) {
+      //   result.push(...currentCaption);
+      //   currentCaption = [];
+      // }
     }
   });
 
@@ -291,6 +292,9 @@ function mergeCaptions(captions) {
 
   function pushCurrentMerge() {
     if (currentMerge) {
+      // Ensure we only have 2 lines maximum
+      const lines = currentMerge.text.split('\n').slice(0, 2);
+      currentMerge.text = lines.join('\n');
       mergedCaptions.push(currentMerge);
       currentMerge = null;
       lineCount = 0;
@@ -308,7 +312,8 @@ function mergeCaptions(captions) {
 
     if (!currentMerge) {
       currentMerge = { ...caption };
-      lineCount = captionLines.length;
+      lineCount = Math.min(captionLines.length, 2);
+      currentMerge.text = captionLines.slice(0, 2).join('\n');
     } else {
       let availableLines = 2 - lineCount;
       let linesToAdd = Math.min(availableLines, captionLines.length);

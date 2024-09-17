@@ -1,4 +1,4 @@
-//170920241542
+//170920241601
 
 
 let uploadedFileName = '';
@@ -16,8 +16,7 @@ function formatAndDisplayText() {
   }).join('\n\n');
 
   const correctedText = correctText(formattedText);
-  const finalText = addNewLineBeforeTimestamps(correctedText);
-  document.getElementById("outputText").textContent = finalText;
+  document.getElementById("outputText").textContent = correctedText;
 }
 
 function addNewLineBeforeTimestamps(text) {
@@ -224,7 +223,7 @@ function correctText(text) {
   lines.forEach(line => {
     if (line.includes('-->')) {
       if (currentCaption.length > 0) {
-        result.push(...currentCaption);
+        result.push(...currentCaption.slice(0, 2)); // Ensure max 2 lines
         currentCaption = [];
       }
       result.push(line);
@@ -233,10 +232,7 @@ function correctText(text) {
       let currentLine = '';
 
       words.forEach(word => {
-        if (word.startsWith('>>') && currentLine.length > 0) {
-          currentCaption.push(currentLine);
-          currentLine = word;
-        } else if (currentLine.length + word.length + 1 > maxCharsPerLine) {
+        if (currentLine.length + word.length + 1 > maxCharsPerLine) {
           if (currentLine) currentCaption.push(currentLine);
           currentLine = word;
         } else {
@@ -248,16 +244,16 @@ function correctText(text) {
         currentCaption.push(currentLine);
       }
 
-      // Remove this condition to prevent pushing captions prematurely
-      // if (currentCaption.length >= 2 || lines.indexOf(line) === lines.length - 1) {
-      //   result.push(...currentCaption);
-      //   currentCaption = [];
-      // }
+      // Limit to 2 lines per caption
+      if (currentCaption.length > 2) {
+        result.push(...currentCaption.slice(0, 2));
+        currentCaption = [];
+      }
     }
   });
 
   if (currentCaption.length > 0) {
-    result.push(...currentCaption);
+    result.push(...currentCaption.slice(0, 2)); // Ensure max 2 lines
   }
 
   return result.join('\n').replace(/\n{3,}/g, '\n\n');
@@ -288,7 +284,6 @@ function getTimestampDifference(timestamp1, timestamp2) {
 function mergeCaptions(captions) {
   let mergedCaptions = [];
   let currentMerge = null;
-  let lineCount = 0;
 
   function pushCurrentMerge() {
     if (currentMerge) {
@@ -297,7 +292,6 @@ function mergeCaptions(captions) {
       currentMerge.text = lines.join('\n');
       mergedCaptions.push(currentMerge);
       currentMerge = null;
-      lineCount = 0;
     }
   }
 
@@ -308,35 +302,31 @@ function mergeCaptions(captions) {
       continue;
     }
 
-    const captionLines = caption.text.split('\n');
+    const captionLines = caption.text.split('\n').slice(0, 2);  // Limit to 2 lines immediately
 
     if (!currentMerge) {
-      currentMerge = { ...caption };
-      lineCount = Math.min(captionLines.length, 2);
-      currentMerge.text = captionLines.slice(0, 2).join('\n');
+      currentMerge = { 
+        ...caption, 
+        text: captionLines.join('\n')
+      };
     } else {
-      let availableLines = 2 - lineCount;
-      let linesToAdd = Math.min(availableLines, captionLines.length);
-
-      if (linesToAdd > 0 && getTimestampDifference(currentMerge.timestamp.split(' --> ')[0], caption.timestamp.split(' --> ')[1]) <= 5000) {
+      const currentLines = currentMerge.text.split('\n');
+      if (currentLines.length < 2) {
         const [currentStart] = currentMerge.timestamp.split(' --> ');
         const [, nextEnd] = caption.timestamp.split(' --> ');
         currentMerge.timestamp = `${currentStart} --> ${nextEnd}`;
-        currentMerge.text += '\n' + captionLines.slice(0, linesToAdd).join('\n');
+        currentMerge.text += '\n' + captionLines[0];
         currentMerge.duration = getTimestampDifference(currentStart, nextEnd);
-        lineCount += linesToAdd;
       } else {
         pushCurrentMerge();
-        currentMerge = {
-          ...caption,
-          text: captionLines.slice(0, 2).join('\n'),
-          timestamp: caption.timestamp
+        currentMerge = { 
+          ...caption, 
+          text: captionLines.join('\n')
         };
-        lineCount = Math.min(captionLines.length, 2);
       }
     }
 
-    if (lineCount === 2 || currentMerge.duration > 5000) {
+    if (currentMerge.text.split('\n').length === 2 || getTimestampDifference(currentMerge.timestamp.split(' --> ')[0], currentMerge.timestamp.split(' --> ')[1]) > 5000) {
       pushCurrentMerge();
     }
   }

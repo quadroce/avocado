@@ -222,23 +222,6 @@ function splitLongCaptions(caption) {
   return result;
 }
 
-  for (let i = 0; i < lines.length; i++) {
-    currentCaption.push(lines[i]);
-
-    if (currentCaption.length === 2 || i === lines.length - 1 || lines[i].startsWith(">> ")) {
-      const currentEnd = i === lines.length - 1 ? endTime : getAdjustedTimestamp(startTime, 5000);
-      pushCurrentCaption(currentEnd);
-      currentCaption = [];
-    }
-  }
-
-  if (currentCaption.length > 0) {
-    pushCurrentCaption(endTime);
-  }
-
-  return result;
-}
-
 function correctText(text) {
   const maxCharsPerLine = 32;
   const lines = text.split('\n');

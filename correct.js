@@ -1,4 +1,4 @@
-//180920241105
+//180920241111
 
 
 let uploadedFileName = '';
@@ -231,44 +231,53 @@ function splitLongCaptions(caption) {
 }
 
 function correctText(text) {
+  const maxCharsPerLine = 32;
   const lines = text.split('\n');
   let result = [];
   let currentCaption = [];
 
+  function pushCurrentCaption() {
+    if (currentCaption.length > 0) {
+      result.push(...currentCaption);
+      currentCaption = [];
+    }
+  }
+
+  function addLine(line) {
+    if (currentCaption.length >= 2) {
+      pushCurrentCaption();
+    }
+    currentCaption.push(line);
+  }
+
   lines.forEach(line => {
     if (line.includes('-->')) {
-      if (currentCaption.length > 0) {
-        result.push(...currentCaption);
-        currentCaption = [];
-      }
+      pushCurrentCaption();
       result.push(line);
     } else {
-      if (line.length > 32) {
-        const words = line.split(' ');
-        let newLine = '';
-        words.forEach(word => {
-          if ((newLine + ' ' + word).length <= 32) {
-            newLine += (newLine ? ' ' : '') + word;
-          } else {
-            if (newLine) currentCaption.push(newLine);
-            newLine = word;
-          }
-        });
-        if (newLine) currentCaption.push(newLine);
-      } else {
-        currentCaption.push(line);
-      }
-      
-      if (currentCaption.length > 2) {
-        result.push(currentCaption[0], currentCaption[1]);
-        currentCaption = currentCaption.slice(2);
+      line = line.replace(/&gt;/g, '>'); // Replace HTML entities
+      const words = line.split(' ');
+      let currentLine = '';
+
+      words.forEach(word => {
+        if (word.startsWith('>>') && currentLine.length > 0) {
+          addLine(currentLine);
+          currentLine = word;
+        } else if (currentLine.length + word.length + 1 > maxCharsPerLine) {
+          if (currentLine) addLine(currentLine);
+          currentLine = word;
+        } else {
+          currentLine += (currentLine ? ' ' : '') + word;
+        }
+      });
+
+      if (currentLine) {
+        addLine(currentLine);
       }
     }
   });
 
-  if (currentCaption.length > 0) {
-    result.push(...currentCaption);
-  }
+  pushCurrentCaption();
 
   return result.join('\n').replace(/\n{3,}/g, '\n\n');
 }

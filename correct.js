@@ -1,4 +1,4 @@
-//160920241027
+//180920241105
 
 
 let uploadedFileName = '';
@@ -177,12 +177,10 @@ function getMidTimestamp(startTimestamp, splitDuration) {
 }
 
 function splitLongCaptions(caption) {
-  const lines = caption.text.split(/\n/g)
-    .map(line => line.trim())
-    .filter(line => line.length > 0);
-
+  const words = caption.text.split(/\s+/);
   let result = [];
   let currentCaption = [];
+  let currentLine = "";
   let startTime = caption.timestamp.split(' --> ')[0];
   let endTime = caption.timestamp.split(' --> ')[1];
 
@@ -195,28 +193,44 @@ function splitLongCaptions(caption) {
         shouldMerge: false
       });
       startTime = addMillisecondsToTimestamp(end, 10); // Add 10ms gap
+      currentCaption = [];
     }
   };
 
-  lines.forEach((line, index) => {
-    currentCaption.push(line);
+  words.forEach((word, index) => {
+    if (word.startsWith(">>") || word === "-" || word === "--") {
+      if (currentLine) {
+        currentCaption.push(currentLine);
+        currentLine = "";
+      }
+      if (currentCaption.length === 2) {
+        pushCurrentCaption(getAdjustedTimestamp(startTime, 5000));
+      }
+      currentLine = word;
+    } else if ((currentLine + " " + word).length > 32) {
+      if (currentCaption.length < 2) {
+        currentCaption.push(currentLine);
+        currentLine = word;
+      } else {
+        pushCurrentCaption(getAdjustedTimestamp(startTime, 5000));
+        currentLine = word;
+      }
+    } else {
+      currentLine += (currentLine ? " " : "") + word;
+    }
 
-    if (currentCaption.length === 2 || index === lines.length - 1 || line.startsWith(">> ") || line.startsWith("- ") || line.startsWith("-- ")) {
-      const currentEnd = index === lines.length - 1 ? endTime : getAdjustedTimestamp(startTime, 5000);
-      pushCurrentCaption(currentEnd);
-      currentCaption = [];
+    if (index === words.length - 1) {
+      if (currentLine) {
+        currentCaption.push(currentLine);
+      }
+      pushCurrentCaption(endTime);
     }
   });
-
-  if (currentCaption.length > 0) {
-    pushCurrentCaption(endTime);
-  }
 
   return result;
 }
 
 function correctText(text) {
-  const maxCharsPerLine = 32;
   const lines = text.split('\n');
   let result = [];
   let currentCaption = [];
@@ -229,28 +243,25 @@ function correctText(text) {
       }
       result.push(line);
     } else {
-      const words = line.split(' ');
-      let currentLine = '';
-
-      words.forEach(word => {
-        if ((word.startsWith('>>') || word === '-' || word === '--') && currentLine.length > 0) {
-          currentCaption.push(currentLine);
-          currentLine = word;
-        } else if (currentLine.length + word.length + 1 > maxCharsPerLine) {
-          if (currentLine) currentCaption.push(currentLine);
-          currentLine = word;
-        } else {
-          currentLine += (currentLine ? ' ' : '') + word;
-        }
-      });
-
-      if (currentLine) {
-        currentCaption.push(currentLine);
+      if (line.length > 32) {
+        const words = line.split(' ');
+        let newLine = '';
+        words.forEach(word => {
+          if ((newLine + ' ' + word).length <= 32) {
+            newLine += (newLine ? ' ' : '') + word;
+          } else {
+            if (newLine) currentCaption.push(newLine);
+            newLine = word;
+          }
+        });
+        if (newLine) currentCaption.push(newLine);
+      } else {
+        currentCaption.push(line);
       }
-
-      if (currentCaption.length >= 2 || lines.indexOf(line) === lines.length - 1) {
-        result.push(...currentCaption);
-        currentCaption = [];
+      
+      if (currentCaption.length > 2) {
+        result.push(currentCaption[0], currentCaption[1]);
+        currentCaption = currentCaption.slice(2);
       }
     }
   });
@@ -265,13 +276,11 @@ function correctText(text) {
 function mergeCaptions(captions) {
   let mergedCaptions = [];
   let currentMerge = null;
-  let lineCount = 0;
 
   function pushCurrentMerge() {
     if (currentMerge) {
       mergedCaptions.push(currentMerge);
       currentMerge = null;
-      lineCount = 0;
     }
   }
 
@@ -286,33 +295,23 @@ function mergeCaptions(captions) {
 
     if (!currentMerge) {
       currentMerge = { ...caption };
-      lineCount = captionLines.length;
     } else {
-      let availableLines = 2 - lineCount;
-      let linesToAdd = Math.min(availableLines, captionLines.length);
+      const startsWithSpecialChar = captionLines[0].startsWith(">> ") || 
+                                    captionLines[0].startsWith("- ") || 
+                                    captionLines[0].startsWith("-- ");
 
-      const startsWithSpecialChar = captionLines[0].startsWith(">> ") || captionLines[0].startsWith("- ") || captionLines[0].startsWith("-- ");
-
-      if (linesToAdd > 0 && getTimestampDifference(currentMerge.timestamp.split(' --> ')[0], caption.timestamp.split(' --> ')[1]) <= 5000 && !startsWithSpecialChar) {
+      if (currentMerge.text.split('\n').length + captionLines.length <= 2 && 
+          getTimestampDifference(currentMerge.timestamp.split(' --> ')[0], caption.timestamp.split(' --> ')[1]) <= 5000 &&
+          !startsWithSpecialChar) {
         const [currentStart] = currentMerge.timestamp.split(' --> ');
         const [, nextEnd] = caption.timestamp.split(' --> ');
         currentMerge.timestamp = `${currentStart} --> ${nextEnd}`;
-        currentMerge.text += '\n' + captionLines.slice(0, linesToAdd).join('\n');
+        currentMerge.text += '\n' + caption.text;
         currentMerge.duration = getTimestampDifference(currentStart, nextEnd);
-        lineCount += linesToAdd;
       } else {
         pushCurrentMerge();
-        currentMerge = {
-          ...caption,
-          text: captionLines.slice(0, 2).join('\n'),
-          timestamp: caption.timestamp
-        };
-        lineCount = Math.min(captionLines.length, 2);
+        currentMerge = { ...caption };
       }
-    }
-
-    if (lineCount === 2 || currentMerge.duration > 5000) {
-      pushCurrentMerge();
     }
   }
 

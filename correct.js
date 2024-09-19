@@ -1,7 +1,7 @@
-//190920241111
+//190920241716
 
 
-et uploadedFileName = '';
+let uploadedFileName = '';
 let logMessages = [];
 
 function formatAndDisplayText() {

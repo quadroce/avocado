@@ -139,7 +139,15 @@ footer {
   button, .file-upload label {
     flex: 1 0 40%;
   }
-}
+} #logOutput {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -158,8 +166,9 @@ footer {
   <button onclick="copyOutput()">Copy</button>
   <button onclick="downloadOutput()">Download</button>
 </div>
-  <div class="container">
-    <textarea style="margin:16px" id="inputText">
+
+<div class="container">
+    <textarea id="inputText">
    WEBVTT
 
 00:00:01.000 --> 00:00:05.000
@@ -243,12 +252,17 @@ This caption ends with an ellipsis...
 
 01:00:55.000 --> 01:01:00.000
 This is the last caption in the file</textarea>
-    <pre id="outputText" style="background:white">Output will appear here!</pre>
+   
+    </textarea>
+    <pre id="outputText">Output will appear here!</pre>
   </div>
+
+  <div id="logOutput">Processing logs will appear here.</div>
+
   <script src="https://unpkg.com/compromise@14.14.0/builds/compromise.js"></script>
   <script src="correct.js"></script>
- <footer>
-    <p>TEST 09122024.0.2</p>
- </footer>
+  <footer>
+    <p>TEST 09122024.0.3</p>
+  </footer>
 </body>
 </html>

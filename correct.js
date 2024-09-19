@@ -1,12 +1,19 @@
-//180920241111
+//190920241111
 
 
-let uploadedFileName = '';
+et uploadedFileName = '';
+let logMessages = [];
 
 function formatAndDisplayText() {
+  logMessages = []; // Reset log messages
   const inputText = document.getElementById("inputText").value;
+  addLog("Starting caption processing...");
+  
   const processedCaptions = formatText(inputText);
+  addLog(`Processed ${processedCaptions.length} captions`);
+  
   const mergedCaptions = mergeCaptions(processedCaptions);
+  addLog(`Merged captions. New total: ${mergedCaptions.length}`);
 
   const formattedText = mergedCaptions.map(caption => {
     if (caption.type === 'header') {
@@ -17,9 +24,19 @@ function formatAndDisplayText() {
 
   const correctedText = correctText(formattedText);
   const finalText = addNewLineBeforeTimestamps(correctedText);
+  
   document.getElementById("outputText").textContent = finalText;
+  displayLogs();
 }
 
+function addLog(message) {
+  logMessages.push(message);
+}
+
+function displayLogs() {
+  const logHtml = logMessages.map(msg => `<p>${msg}</p>`).join('');
+  document.getElementById("logOutput").innerHTML = logHtml;
+}
 function addNewLineBeforeTimestamps(text) {
   const timestampRegex = /(\d{1,2}:\d{2}:\d{2}\.\d{3} --> \d{1,2}:\d{2}:\d{2}\.\d{3}.*)/g;
   return text.replace(timestampRegex, '\n$1');
@@ -38,6 +55,7 @@ function formatText(text) {
   const lines = text.split('\n');
   let formattedText = [];
   let currentCaption = null;
+  let captionCount = 0;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -50,6 +68,7 @@ function formatText(text) {
     if (isTimestamp(line)) {
       if (currentCaption) {
         formattedText.push(...processCaption(currentCaption));
+        captionCount++;
       }
       currentCaption = { timestamp: line, text: '', originalTimestamp: line };
     } else if (currentCaption) {
@@ -59,7 +78,10 @@ function formatText(text) {
 
   if (currentCaption) {
     formattedText.push(...processCaption(currentCaption));
+    captionCount++;
   }
+
+  addLog(`Processed ${captionCount} captions`);
 
   formattedText = formattedText.flatMap(caption => {
     if (caption.type === 'caption') {
@@ -70,6 +92,8 @@ function formatText(text) {
     }
     return caption;
   });
+
+  addLog(`After splitting long captions: ${formattedText.length} total captions`);
 
   return formattedText;
 }
@@ -235,6 +259,7 @@ function correctText(text) {
   const lines = text.split('\n');
   let result = [];
   let currentCaption = [];
+  let fixedLines = 0;
 
   function pushCurrentCaption() {
     if (currentCaption.length > 0) {
@@ -248,6 +273,7 @@ function correctText(text) {
       pushCurrentCaption();
     }
     currentCaption.push(line);
+    fixedLines++;
   }
 
   lines.forEach(line => {
@@ -278,6 +304,8 @@ function correctText(text) {
   });
 
   pushCurrentCaption();
+
+  addLog(`Fixed ${fixedLines} lines to match character limit`);
 
   return result.join('\n').replace(/\n{3,}/g, '\n\n');
 }

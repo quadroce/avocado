@@ -15,7 +15,7 @@ function formatAndDisplayText() {
   const mergedCaptions = mergeCaptions(processedCaptions);
   addLog(`Merged captions. New total: ${mergedCaptions.length}`);
 
-  const formattedText = mergedCaptions.map(caption => {
+  let formattedText = mergedCaptions.map(caption => {
     if (caption.type === 'header') {
       return caption.content;
     }
@@ -256,70 +256,65 @@ function splitLongCaptions(caption) {
 
 function correctText(text) {
   const maxCharsPerLine = 32;
+  const maxLinesPerCaption = 2;
   const lines = text.split('\n');
   let result = [];
+  let fixedCaptions = 0;
   let currentCaption = [];
-  let fixedLines = 0;
-
-  function pushCurrentCaption() {
-    if (currentCaption.length > 0) {
-      result.push(...currentCaption);
-      currentCaption = [];
-    }
-  }
 
   function addLine(line) {
-    if (currentCaption.length >= 2) {
-      pushCurrentCaption();
+    if (currentCaption.length < maxLinesPerCaption) {
+      currentCaption.push(line.trim());
     }
-    currentCaption.push(line);
-    fixedLines++;
+    if (currentCaption.length === maxLinesPerCaption) {
+      result.push(currentCaption.join('\n'));
+      currentCaption = [];
+      fixedCaptions++;
+    }
   }
 
   lines.forEach(line => {
     if (line.includes('-->')) {
-      pushCurrentCaption();
+      if (currentCaption.length > 0) {
+        result.push(currentCaption.join('\n'));
+        currentCaption = [];
+        fixedCaptions++;
+      }
       result.push(line);
     } else {
-      line = line.replace(/&gt;/g, '>'); // Replace HTML entities
+      line = line.replace(/&gt;/g, '>').replace(/&lt;/g, '<'); // Replace HTML entities
+      let words = line.split(/\s+/);
       let currentLine = '';
-      let words = line.split(/(\s+)/);
 
       words.forEach(word => {
-        if (word.startsWith('>>') && currentLine.length > 0) {
-          addLine(currentLine.trim());
-          currentLine = word;
-        } else if (currentLine.length + word.length > maxCharsPerLine) {
-          if (currentLine.length > 0) {
-            addLine(currentLine.trim());
-            currentLine = '';
-          }
-          while (word.length > maxCharsPerLine) {
-            addLine(word.slice(0, maxCharsPerLine));
-            word = word.slice(maxCharsPerLine);
-          }
-          currentLine = word;
+        if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+          currentLine += (currentLine ? ' ' : '') + word;
         } else {
-          currentLine += word;
-        }
-
-        if (currentLine.length === maxCharsPerLine) {
-          addLine(currentLine.trim());
-          currentLine = '';
+          if (currentLine) {
+            addLine(currentLine);
+          }
+          currentLine = word;
+          while (currentLine.length > maxCharsPerLine) {
+            addLine(currentLine.slice(0, maxCharsPerLine));
+            currentLine = currentLine.slice(maxCharsPerLine);
+          }
         }
       });
 
       if (currentLine) {
-        addLine(currentLine.trim());
+        addLine(currentLine);
       }
     }
   });
 
-  pushCurrentCaption();
+  if (currentCaption.length > 0) {
+    result.push(currentCaption.join('\n'));
+    fixedCaptions++;
+  }
 
-  addLog(`Fixed ${fixedLines} lines to match 32-character limit`);
+  addLog(`Formatted ${fixedCaptions} captions to 2 lines with 32-character limit`);
 
-  return result.join('\n').replace(/\n{3,}/g, '\n\n');
+  return result.join('\n');
 }
 
 function mergeCaptions(captions) {

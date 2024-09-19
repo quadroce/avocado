@@ -1,4 +1,4 @@
-//190920241730
+let version = "190920241736";
 
 
 let uploadedFileName = '';
@@ -14,6 +14,7 @@ function formatAndDisplayText() {
   
   const mergedCaptions = mergeCaptions(processedCaptions);
   addLog(`Merged captions. New total: ${mergedCaptions.length}`);
+    addLog(`Version: ${version}`);
 
   let formattedText = mergedCaptions.map(caption => {
     if (caption.type === 'header') {

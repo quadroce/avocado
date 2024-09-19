@@ -1,20 +1,22 @@
-let version = "190920241736";
-
-
+let version = "190920242343";
 let uploadedFileName = '';
 let logMessages = [];
+
+const MAX_LINES_PER_CAPTION = 3;
+const MAX_CHARS_PER_LINE = 32;
+const MAX_CAPTION_DURATION_MS = 7000;
+const MIN_CAPTION_DURATION_MS = 1200;
 
 function formatAndDisplayText() {
   logMessages = []; // Reset log messages
   const inputText = document.getElementById("inputText").value;
-  addLog("Starting caption processing...");
+  addLog(`Version: ${version}`);
   
   const processedCaptions = formatText(inputText);
   addLog(`Processed ${processedCaptions.length} captions`);
-  
+
   const mergedCaptions = mergeCaptions(processedCaptions);
   addLog(`Merged captions. New total: ${mergedCaptions.length}`);
-    addLog(`Version: ${version}`);
 
   let formattedText = mergedCaptions.map(caption => {
     if (caption.type === 'header') {
@@ -23,10 +25,7 @@ function formatAndDisplayText() {
     return `${caption.timestamp}\n${caption.text}`;
   }).join('\n\n');
 
-  const correctedText = correctText(formattedText);
-  const finalText = addNewLineBeforeTimestamps(correctedText);
-  
-  document.getElementById("outputText").textContent = finalText;
+  document.getElementById("outputText").textContent = formattedText;
   displayLogs();
 }
 
@@ -38,284 +37,35 @@ function displayLogs() {
   const logHtml = logMessages.map(msg => `<p>${msg}</p>`).join('');
   document.getElementById("logOutput").innerHTML = logHtml;
 }
-function addNewLineBeforeTimestamps(text) {
-  const timestampRegex = /(\d{1,2}:\d{2}:\d{2}\.\d{3} --> \d{1,2}:\d{2}:\d{2}\.\d{3}.*)/g;
-  return text.replace(timestampRegex, '\n$1');
-}
-
-function cleanTimestamp(timestamp) {
-  const parts = timestamp.split(' ');
-  return parts[0];
-}
 
 function formatText(text) {
-  if (typeof text !== 'string') {
-    throw new Error('Input text must be a string');
-  }
-
   const lines = text.split('\n');
-  let formattedText = [];
+  let formattedCaptions = [];
   let currentCaption = null;
-  let captionCount = 0;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
 
     if (line.startsWith("WEBVTT")) {
-      formattedText.push({ type: 'header', content: line });
+      formattedCaptions.push({ type: 'header', content: line });
       continue;
     }
 
     if (isTimestamp(line)) {
       if (currentCaption) {
-        formattedText.push(...processCaption(currentCaption));
-        captionCount++;
+        formattedCaptions.push(currentCaption);
       }
-      currentCaption = { timestamp: line, text: '', originalTimestamp: line };
+      currentCaption = { timestamp: line, text: '' };
     } else if (currentCaption) {
-      currentCaption.text += (currentCaption.text ? ' ' : '') + line;
+      currentCaption.text += (currentCaption.text ? '\n' : '') + line;
     }
   }
 
   if (currentCaption) {
-    formattedText.push(...processCaption(currentCaption));
-    captionCount++;
+    formattedCaptions.push(currentCaption);
   }
 
-  addLog(`Processed ${captionCount} captions`);
-
-  formattedText = formattedText.flatMap(caption => {
-    if (caption.type === 'caption') {
-      return splitLongCaptions(caption).map(splitCaption => ({
-        ...splitCaption,
-        timestamp: cleanTimestamp(splitCaption.timestamp)
-      }));
-    }
-    return caption;
-  });
-
-  addLog(`After splitting long captions: ${formattedText.length} total captions`);
-
-  return formattedText;
-}
-
-function isTimestamp(line) {
-  return /^\d{1,2}:\d{2}:\d{2}\.\d{3} --> \d{1,2}:\d{2}:\d{2}\.\d{3}/.test(line);
-}
-
-function processCaption(caption) {
-  const [start, end] = caption.timestamp.split(' --> ');
-  const duration = getTimestampDifference(start, end);
-
-  if (duration > 7000) {
-    return splitCaptionByDuration(caption, 7000);
-  } else {
-    return [{ ...caption, duration, shouldMerge: duration < 1200 }];
-  }
-}
-
-function splitCaptionByDuration(caption, maxDuration) {
-  const [start, end] = caption.timestamp.split(' --> ');
-  const totalDuration = getTimestampDifference(start, end);
-
-  const splitPoint = totalDuration / 2;
-  const splitTimestamp = getMidTimestamp(start, splitPoint);
-  const gapEndTimestamp = addFramesToTimestamp(splitTimestamp, 4);
-
-  // Extract alignment and positioning info
-  const alignInfo = caption.timestamp.split(' --> ')[1].split(' ').slice(1).join(' ');
-
-  // Find a good splitting point
-  let splitIndex = findSplitIndex(caption.text);
-
-  const firstPart = {
-    timestamp: `${start} --> ${splitTimestamp} ${alignInfo}`,
-    text: caption.text.substring(0, splitIndex).trim(),
-    duration: splitPoint,
-    shouldMerge: false
-  };
-
-  const secondPart = {
-    timestamp: `${gapEndTimestamp} --> ${end} ${alignInfo}`,
-    text: caption.text.substring(splitIndex).trim(),
-    duration: totalDuration - splitPoint - 166, // Assuming 24 fps, 4 frames = 166ms
-    shouldMerge: false
-  };
-
-  return [firstPart, secondPart];
-}
-
-function findSplitIndex(text) {
-  // First, try to split at the end of a sentence
-  const sentenceEnd = text.indexOf('. ', text.length / 2 - 20);
-  if (sentenceEnd !== -1 && sentenceEnd <= text.length / 2 + 20) {
-    return sentenceEnd + 1; // Include the period in the first part
-  }
-
-  // If no sentence end is found, try to split at a speaker change
-  const speakerChange = text.indexOf('>> ', text.length / 2 - 20);
-  if (speakerChange !== -1 && speakerChange <= text.length / 2 + 20) {
-    return speakerChange;
-  }
-
-  // If no good splitting point is found, split at the nearest space to the midpoint
-  const midPoint = Math.floor(text.length / 2);
-  const leftSpace = text.lastIndexOf(' ', midPoint);
-  const rightSpace = text.indexOf(' ', midPoint);
-
-  if (leftSpace === -1 && rightSpace === -1) {
-    return midPoint; // No spaces found, split in the middle of a word as a last resort
-  } else if (leftSpace === -1) {
-    return rightSpace;
-  } else if (rightSpace === -1) {
-    return leftSpace;
-  } else {
-    // Return the nearest space to the midpoint
-    return (midPoint - leftSpace <= rightSpace - midPoint) ? leftSpace : rightSpace;
-  }
-}
-
-function addFramesToTimestamp(timestamp, frames) {
-  const [hours, minutes, seconds, milliseconds] = timestamp.split(/[:.]/).map(Number);
-  const totalMs = (hours * 3600000) + (minutes * 60000) + (seconds * 1000) + milliseconds + (frames * 1000 / 24);
-
-  const newHours = Math.floor(totalMs / 3600000);
-  const newMinutes = Math.floor((totalMs % 3600000) / 60000);
-  const newSeconds = Math.floor((totalMs % 60000) / 1000);
-  const newMilliseconds = Math.floor(totalMs % 1000);
-
-  return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}.${String(newMilliseconds).padStart(3, '0')}`;
-}
-
-function getMidTimestamp(startTimestamp, splitDuration) {
-  const [hours, minutes, seconds, milliseconds] = startTimestamp.split(/[:.]/).map(Number);
-
-  const startMs = (hours * 3600000) + (minutes * 60000) + (seconds * 1000) + milliseconds;
-  const midMs = startMs + splitDuration;
-
-  const newHours = Math.floor(midMs / 3600000);
-  const newMinutes = Math.floor((midMs % 3600000) / 60000);
-  const newSeconds = Math.floor((midMs % 60000) / 1000);
-  const newMilliseconds = midMs % 1000;
-
-  return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}.${String(newMilliseconds).padStart(3, '0')}`;
-}
-
-function splitLongCaptions(caption) {
-  const words = caption.text.split(/\s+/);
-  let result = [];
-  let currentCaption = [];
-  let currentLine = "";
-  let startTime = caption.timestamp.split(' --> ')[0];
-  let endTime = caption.timestamp.split(' --> ')[1];
-
-  const pushCurrentCaption = (end) => {
-    if (currentCaption.length > 0) {
-      result.push({
-        timestamp: `${startTime} --> ${end}`,
-        text: currentCaption.join('\n'),
-        duration: getTimestampDifference(startTime, end),
-        shouldMerge: false
-      });
-      startTime = addMillisecondsToTimestamp(end, 10); // Add 10ms gap
-      currentCaption = [];
-    }
-  };
-
-  words.forEach((word, index) => {
-    if (word.startsWith(">>") || word === "-" || word === "--") {
-      if (currentLine) {
-        currentCaption.push(currentLine);
-        currentLine = "";
-      }
-      if (currentCaption.length === 2) {
-        pushCurrentCaption(getAdjustedTimestamp(startTime, 5000));
-      }
-      currentLine = word;
-    } else if ((currentLine + " " + word).length > 32) {
-      if (currentCaption.length < 2) {
-        currentCaption.push(currentLine);
-        currentLine = word;
-      } else {
-        pushCurrentCaption(getAdjustedTimestamp(startTime, 5000));
-        currentLine = word;
-      }
-    } else {
-      currentLine += (currentLine ? " " : "") + word;
-    }
-
-    if (index === words.length - 1) {
-      if (currentLine) {
-        currentCaption.push(currentLine);
-      }
-      pushCurrentCaption(endTime);
-    }
-  });
-
-  return result;
-}
-
-function correctText(text) {
-  const maxCharsPerLine = 32;
-  const maxLinesPerCaption = 2;
-  const lines = text.split('\n');
-  let result = [];
-  let fixedCaptions = 0;
-  let currentCaption = [];
-
-  function addLine(line) {
-    if (currentCaption.length < maxLinesPerCaption) {
-      currentCaption.push(line.trim());
-    }
-    if (currentCaption.length === maxLinesPerCaption) {
-      result.push(currentCaption.join('\n'));
-      currentCaption = [];
-      fixedCaptions++;
-    }
-  }
-
-  lines.forEach(line => {
-    if (line.includes('-->')) {
-      if (currentCaption.length > 0) {
-        result.push(currentCaption.join('\n'));
-        currentCaption = [];
-        fixedCaptions++;
-      }
-      result.push(line);
-    } else {
-      line = line.replace(/&gt;/g, '>').replace(/&lt;/g, '<'); // Replace HTML entities
-      let words = line.split(/\s+/);
-      let currentLine = '';
-
-      words.forEach(word => {
-        if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
-          currentLine += (currentLine ? ' ' : '') + word;
-        } else {
-          if (currentLine) {
-            addLine(currentLine);
-          }
-          currentLine = word;
-          while (currentLine.length > maxCharsPerLine) {
-            addLine(currentLine.slice(0, maxCharsPerLine));
-            currentLine = currentLine.slice(maxCharsPerLine);
-          }
-        }
-      });
-
-      if (currentLine) {
-        addLine(currentLine);
-      }
-    }
-  });
-
-  if (currentCaption.length > 0) {
-    result.push(currentCaption.join('\n'));
-    fixedCaptions++;
-  }
-
-  addLog(`Formatted ${fixedCaptions} captions to 2 lines with 32-character limit`);
-
-  return result.join('\n');
+  return formattedCaptions;
 }
 
 function mergeCaptions(captions) {
@@ -324,56 +74,104 @@ function mergeCaptions(captions) {
 
   function pushCurrentMerge() {
     if (currentMerge) {
-      mergedCaptions.push(currentMerge);
+      const splitCaptions = splitCaptionIfNeeded(currentMerge);
+      mergedCaptions.push(...splitCaptions);
       currentMerge = null;
     }
   }
 
-  for (let caption of captions) {
+  for (let i = 0; i < captions.length; i++) {
+    const caption = captions[i];
     if (caption.type === 'header') {
       pushCurrentMerge();
       mergedCaptions.push(caption);
       continue;
     }
 
-    const captionLines = caption.text.split('\n');
+    const [start, end] = caption.timestamp.split(' --> ');
+    const duration = getTimestampDifference(start, end);
 
     if (!currentMerge) {
-      currentMerge = { ...caption };
+      currentMerge = { ...caption, duration };
     } else {
-      const startsWithSpecialChar = captionLines[0].startsWith(">> ") || 
-                                    captionLines[0].startsWith("- ") || 
-                                    captionLines[0].startsWith("-- ");
+      const [currentStart, currentEnd] = currentMerge.timestamp.split(' --> ');
+      const currentDuration = getTimestampDifference(currentStart, currentEnd);
 
-      if (currentMerge.text.split('\n').length + captionLines.length <= 2 && 
-          getTimestampDifference(currentMerge.timestamp.split(' --> ')[0], caption.timestamp.split(' --> ')[1]) <= 5000 &&
-          !startsWithSpecialChar) {
-        const [currentStart] = currentMerge.timestamp.split(' --> ');
-        const [, nextEnd] = caption.timestamp.split(' --> ');
-        currentMerge.timestamp = `${currentStart} --> ${nextEnd}`;
+      if (currentDuration + duration <= MAX_CAPTION_DURATION_MS) {
+        currentMerge.timestamp = `${currentStart} --> ${end}`;
         currentMerge.text += '\n' + caption.text;
-        currentMerge.duration = getTimestampDifference(currentStart, nextEnd);
+        currentMerge.duration = currentDuration + duration;
       } else {
         pushCurrentMerge();
-        currentMerge = { ...caption };
+        currentMerge = { ...caption, duration };
       }
+    }
+
+    if (currentMerge.duration >= MAX_CAPTION_DURATION_MS) {
+      pushCurrentMerge();
     }
   }
 
   pushCurrentMerge();
+
   return mergedCaptions;
 }
 
-function getAdjustedTimestamp(startTimestamp, millisToAdd) {
-  const [hours, minutes, seconds, milliseconds] = startTimestamp.split(/[:.]/).map(Number);
-  const totalMs = (hours * 3600000) + (minutes * 60000) + (seconds * 1000) + milliseconds + millisToAdd;
+function splitCaptionIfNeeded(caption) {
+  const formattedLines = formatLines(caption.text);
+  if (formattedLines.length <= MAX_LINES_PER_CAPTION) {
+    return [{
+      ...caption,
+      text: formattedLines.join('\n')
+    }];
+  }
 
-  const newHours = Math.floor(totalMs / 3600000);
-  const newMinutes = Math.floor((totalMs % 3600000) / 60000);
-  const newSeconds = Math.floor((totalMs % 60000) / 1000);
-  const newMilliseconds = Math.floor(totalMs % 1000);
+  const [start, end] = caption.timestamp.split(' --> ');
+  const totalDuration = getTimestampDifference(start, end);
+  const parts = Math.ceil(formattedLines.length / MAX_LINES_PER_CAPTION);
+  const partDuration = Math.round(totalDuration / parts);
 
-  return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}.${String(newMilliseconds).padStart(3, '0')}`;
+  return Array.from({ length: parts }, (_, i) => {
+    const partStart = addMillisecondsToTimestamp(start, i * partDuration);
+    const partEnd = i === parts - 1 ? end : addMillisecondsToTimestamp(start, (i + 1) * partDuration);
+    const partLines = formattedLines.slice(i * MAX_LINES_PER_CAPTION, (i + 1) * MAX_LINES_PER_CAPTION);
+    return {
+      timestamp: `${partStart} --> ${partEnd}`,
+      text: partLines.join('\n'),
+      duration: partDuration
+    };
+  });
+}
+
+function formatLines(text) {
+  let formattedLines = [];
+  let currentLine = '';
+  const words = text.split(/\s+/);
+
+  words.forEach((word, index) => {
+    if (word === '>>' || word === '-' || (index === 0 && word === '--')) {
+      if (currentLine) formattedLines.push(currentLine);
+      currentLine = word;
+    } else if ((currentLine + ' ' + word).length > MAX_CHARS_PER_LINE) {
+      if (currentLine) formattedLines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine += (currentLine ? ' ' : '') + word;
+    }
+
+    if (currentLine.length > MAX_CHARS_PER_LINE) {
+      formattedLines.push(currentLine.slice(0, MAX_CHARS_PER_LINE));
+      currentLine = currentLine.slice(MAX_CHARS_PER_LINE);
+    }
+  });
+
+  if (currentLine) formattedLines.push(currentLine);
+
+  return formattedLines;
+}
+
+function isTimestamp(line) {
+  return /^\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}/.test(line);
 }
 
 function getTimestampDifference(timestamp1, timestamp2) {
@@ -383,68 +181,14 @@ function getTimestampDifference(timestamp1, timestamp2) {
   const ms1 = (parseInt(time1[0]) * 3600000) + (parseInt(time1[1]) * 60000) + (parseInt(time1[2]) * 1000) + parseInt(time1[3]);
   const ms2 = (parseInt(time2[0]) * 3600000) + (parseInt(time2[1]) * 60000) + (parseInt(time2[2]) * 1000) + parseInt(time2[3]);
 
-  return ms2 - ms1;
-}
-
-function mergeCaptions(captions) {
-  let mergedCaptions = [];
-  let currentMerge = null;
-  let lineCount = 0;
-
-  function pushCurrentMerge() {
-    if (currentMerge) {
-      mergedCaptions.push(currentMerge);
-      currentMerge = null;
-      lineCount = 0;
-    }
-  }
-
-  for (let caption of captions) {
-    if (caption.type === 'header') {
-      pushCurrentMerge();
-      mergedCaptions.push(caption);
-      continue;
-    }
-
-    const captionLines = caption.text.split('\n');
-
-    if (!currentMerge) {
-      currentMerge = { ...caption };
-      lineCount = captionLines.length;
-    } else {
-      let availableLines = 2 - lineCount;
-      let linesToAdd = Math.min(availableLines, captionLines.length);
-
-      if (linesToAdd > 0 && getTimestampDifference(currentMerge.timestamp.split(' --> ')[0], caption.timestamp.split(' --> ')[1]) <= 5000) {
-        const [currentStart] = currentMerge.timestamp.split(' --> ');
-        const [, nextEnd] = caption.timestamp.split(' --> ');
-        currentMerge.timestamp = `${currentStart} --> ${nextEnd}`;
-        currentMerge.text += '\n' + captionLines.slice(0, linesToAdd).join('\n');
-        currentMerge.duration = getTimestampDifference(currentStart, nextEnd);
-        lineCount += linesToAdd;
-      } else {
-        pushCurrentMerge();
-        currentMerge = {
-          ...caption,
-          text: captionLines.slice(0, 2).join('\n'),
-          timestamp: caption.timestamp
-        };
-        lineCount = Math.min(captionLines.length, 2);
-      }
-    }
-
-    if (lineCount === 2 || currentMerge.duration > 5000) {
-      pushCurrentMerge();
-    }
-  }
-
-  pushCurrentMerge();
-  return mergedCaptions;
+  return Math.round(ms2 - ms1);
 }
 
 function addMillisecondsToTimestamp(timestamp, milliseconds) {
   const [hours, minutes, seconds, currentMilliseconds] = timestamp.split(/[:.]/).map(Number);
   let totalMilliseconds = (hours * 3600000) + (minutes * 60000) + (seconds * 1000) + currentMilliseconds + milliseconds;
+
+  totalMilliseconds = Math.round(totalMilliseconds);
 
   const newHours = Math.floor(totalMilliseconds / 3600000);
   totalMilliseconds %= 3600000;
@@ -456,10 +200,28 @@ function addMillisecondsToTimestamp(timestamp, milliseconds) {
   return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}.${String(newMilliseconds).padStart(3, '0')}`;
 }
 
+// ... (rest of the code remains the same)
+
+function splitCaptionByDuration(caption, maxDuration) {
+  const [start, end] = caption.timestamp.split(' --> ');
+  const totalDuration = getTimestampDifference(start, end);
+  const parts = Math.ceil(totalDuration / maxDuration);
+  const partDuration = Math.round(totalDuration / parts); // Round to nearest millisecond
+
+  return Array.from({ length: parts }, (_, i) => {
+    const partStart = addMillisecondsToTimestamp(start, i * partDuration);
+    const partEnd = i === parts - 1 ? end : addMillisecondsToTimestamp(start, (i + 1) * partDuration);
+    return {
+      timestamp: `${partStart} --> ${partEnd}`,
+      text: caption.text,
+      duration: partDuration
+    };
+  });
+}
+
 function handleFileUpload(event) {
   const file = event.target.files[0];
   if (file) {
-    // Store the uploaded file name without the extension
     uploadedFileName = file.name.replace(/\.[^/.]+$/, "");
     
     const reader = new FileReader();
@@ -484,8 +246,7 @@ function downloadOutput() {
   const a = document.createElement('a');
   a.href = url;
   
-  // Use the uploaded filename if available, otherwise use a default name
-  const downloadFileName = uploadedFileName ? `${uploadedFileName}_avocado.vtt` : 'captions_avocado.vtt';
+  const downloadFileName = uploadedFileName ? `${uploadedFileName}_formatted.vtt` : 'captions_formatted.vtt';
   a.download = downloadFileName;
   
   a.click();

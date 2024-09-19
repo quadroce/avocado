@@ -1,4 +1,4 @@
-//190920241716
+//190920241730
 
 
 let uploadedFileName = '';
@@ -282,30 +282,42 @@ function correctText(text) {
       result.push(line);
     } else {
       line = line.replace(/&gt;/g, '>'); // Replace HTML entities
-      const words = line.split(' ');
       let currentLine = '';
+      let words = line.split(/(\s+)/);
 
       words.forEach(word => {
         if (word.startsWith('>>') && currentLine.length > 0) {
-          addLine(currentLine);
+          addLine(currentLine.trim());
           currentLine = word;
-        } else if (currentLine.length + word.length + 1 > maxCharsPerLine) {
-          if (currentLine) addLine(currentLine);
+        } else if (currentLine.length + word.length > maxCharsPerLine) {
+          if (currentLine.length > 0) {
+            addLine(currentLine.trim());
+            currentLine = '';
+          }
+          while (word.length > maxCharsPerLine) {
+            addLine(word.slice(0, maxCharsPerLine));
+            word = word.slice(maxCharsPerLine);
+          }
           currentLine = word;
         } else {
-          currentLine += (currentLine ? ' ' : '') + word;
+          currentLine += word;
+        }
+
+        if (currentLine.length === maxCharsPerLine) {
+          addLine(currentLine.trim());
+          currentLine = '';
         }
       });
 
       if (currentLine) {
-        addLine(currentLine);
+        addLine(currentLine.trim());
       }
     }
   });
 
   pushCurrentCaption();
 
-  addLog(`Fixed ${fixedLines} lines to match character limit`);
+  addLog(`Fixed ${fixedLines} lines to match 32-character limit`);
 
   return result.join('\n').replace(/\n{3,}/g, '\n\n');
 }

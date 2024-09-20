@@ -540,8 +540,20 @@ function updateButtonStates() {
     const outputVtt = document.getElementById('outputVtt');
 
     processButton.disabled = !fileInput.files.length;
-    downloadButton.disabled = !outputVtt.value;
+    downloadButton.disabled = !outputVtt.value.trim();  // Check if outputVtt has non-empty content
 }
+
+document.getElementById('processButton').addEventListener('click', function() {
+    const inputVtt = document.getElementById('inputVtt').value;
+    logs = []; // Reset logs
+    const processedVtt = processVTT(inputVtt);
+    document.getElementById('outputVtt').value = processedVtt;
+    displayLogs();
+    updateButtonStates();  // Make sure to call this after setting the output value
+});
+
+// Ensure updateButtonStates is called whenever the output changes
+document.getElementById('outputVtt').addEventListener('input', updateButtonStates);
 
 function downloadProcessedVtt() {
     const outputVtt = document.getElementById('outputVtt').value;
@@ -574,14 +586,7 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
     }
 });
 
-document.getElementById('processButton').addEventListener('click', function() {
-    const inputVtt = document.getElementById('inputVtt').value;
-    logs = []; // Reset logs
-    const processedVtt = processVTT(inputVtt);
-    document.getElementById('outputVtt').value = processedVtt;
-    displayLogs();
-    updateButtonStates();
-});
+
 
 document.getElementById('downloadButton').addEventListener('click', downloadProcessedVtt);
 

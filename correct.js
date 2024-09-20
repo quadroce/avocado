@@ -97,7 +97,7 @@ function processCaption(captionLines) {
 
     return [timestamp, ...processedLines];
 }
-}
+
 function step2_handleDuration(vttContent) {
     addLog("Starting duration handling", "info");
     let processedContent = [];

@@ -153,11 +153,8 @@ footer {
 </head>
 <body>
   <header>
-    <img src="https://cdn.pixabay.com/photo/2023/08/12/16/45/avocado-8186060_1280.png" alt="Avocado">
-    <h1>AVOCADO FIXING LINES</h1>
-       <h6>Max 32 Char, Capitalize first string, fixing the short and log captions, max 3 lines, check questions mark</h6>
-  </header>
- <div class="buttons">
+    </header>
+  <div class="buttons">
     <div class="file-upload">
       <label for="fileInput">Upload VTT File</label>
       <input type="file" id="fileInput" accept=".vtt">
@@ -167,96 +164,8 @@ footer {
     <button id="downloadButton" onclick="downloadOutput()" disabled>Download Avocado VTT</button>
   </div>
 
-<div class="container">
-    <textarea id="inputText">
-   WEBVTT
-
-00:00:00.001 --> 00:00:00.999
-0123456 7890 12345 12345 0123456789 0123 4567
-
-   00:00:01.000 --> 00:00:05.000
-This is a normal caption
-With two lines
-
-00:00:05.500 --> 00:00:10.000
-This caption is too long and should be split into multiple parts because it exceeds the maximum allowed length for a single caption
-
-00:00:10.500 --> 00:00:15.000
->> This caption starts with a speaker change
-And continues on the next line
-
-00:00:15.500 --> 00:00:20.000
-This caption has no end time -->
-
-00:00:20.500 --> 00:00:25.000 align:start position:10%
-This caption includes alignment and positioning information
-
-00:00:25.500 --> 00:00:30.000
-- This caption starts with a dash
--- This line starts with two dashes
-
-00:00:30.500 --> 00:00:35.000
-This caption has &gt; HTML entities &lt; that need to be replaced
-
-00:00:35.500 --> 00:00:40.000
-This caption has no start time
-
-00:00:40.500 --> 00:00:45.000
-This caption has an invalid timestamp format
-
-00:00:45.500 --> 00:00:50.000
-This caption has a very short duration
-
-00:00:50.001 --> 00:00:55.000
-This caption starts immediately after the previous one
-
-00:00:55.000 --> 01:00:00.000
-This is a caption with four lines
-It should be split into two separate captions
-Because it exceeds the standard
-Two-line limit for readability
-
-01:00:00.000 --> 01:00:05.000
-This caption tests hour rollover in timestamps
-
-01:00:05.000 --> 01:00:10.000
->> Speaker 1: This caption has multiple speakers
->> Speaker 2: On different lines
-
-01:00:10.000 --> 01:00:15.000
-This caption has no text content
-
-01:00:15.000 --> 01:00:20.000
-This caption includes special characters: !@#$%^&*()_+
-
-01:00:20.000 --> 01:00:25.000
-This caption has
-unnecessary line breaks
-in the middle of sentences
-
-01:00:25.000 --> 01:00:30.000
-This caption tests merging with the next one
-
-01:00:30.001 --> 01:00:35.000
-Because they are close in time and have few lines
-
-01:00:35.000 --> 01:00:40.000
-This caption has numbers and dates: 12345 01/01/2023
-
-01:00:40.000 --> 01:00:45.000
-  This caption has leading spaces
-    And varying indentation levels
-
-01:00:45.000 --> 01:00:50.000
-This caption ends with an ellipsis...
-
-01:00:50.000 --> 01:00:55.000
-...And this one starts with an ellipsis
-
-01:00:55.000 --> 01:01:00.000
-This is the last caption in the file</textarea>
-   
-    </textarea>
+  <div class="container">
+    <textarea id="inputText"></textarea>
     <pre id="outputText">Output will appear here!</pre>
   </div>
 
@@ -273,17 +182,18 @@ This is the last caption in the file</textarea>
         originalFileName = file.name;
         const reader = new FileReader();
         reader.onload = function(e) {
-          document.getElementById('inputVtt').value = e.target.result;
+          // Display the uploaded file content in the input textarea
+          document.getElementById('inputText').value = e.target.result;
         };
         reader.readAsText(file);
       }
     });
 
     document.getElementById('processButton').addEventListener('click', function() {
-      const inputVtt = document.getElementById('inputVtt').value;
+      const inputVtt = document.getElementById('inputText').value;
       logs = []; // Reset logs
       const processedVtt = processVTT(inputVtt);
-      document.getElementById('outputVtt').value = processedVtt;
+      document.getElementById('outputText').value = processedVtt;
       displayLogs();
       document.getElementById('downloadButton').disabled = false;
     });

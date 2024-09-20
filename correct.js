@@ -1,20 +1,16 @@
 let logs = [];
-let version = "200920241551";
+let version = "200920241602";
 let uploadedFileName = '';
 
 function addLog(message, type = 'info') {
-    	logs.push({ message, type });
+    logs.push({ message, type });
 }
 
 function displayLogs() {
-      addLog(`Version: ${version}`);
-
-	const logOutput = document.getElementById('logOutput');
-    
-	logOutput.innerHTML = logs.map(log => `<p class="${log.type}">${log.message}</p>`).join('');
-	  document.getElementById("myText").innerHTML = version;
-
-	
+    addLog(`Version: ${version}`);
+    const logOutput = document.getElementById('logOutput');
+    logOutput.innerHTML = logs.map(log => `<p class="${log.type}">${log.message}</p>`).join('');
+    document.getElementById("myText").innerHTML = version;
 }
 
 function displayVersion() {
@@ -26,7 +22,6 @@ function displayVersion() {
     }
 }
 
-
 function parseTimestamp(timestamp) {
     const [hours, minutes, seconds] = timestamp.split(':');
     const [secs, ms] = seconds.split('.');
@@ -37,11 +32,9 @@ function formatTimestamp(ms) {
     const hours = Math.floor(ms / 3600000);
     const minutes = Math.floor((ms % 3600000) / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
-    const milliseconds = Math.round(ms % 1000);  // Round to nearest millisecond
+    const milliseconds = Math.round(ms % 1000);
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
 }
-
-// The rest of the code remains the same...
 
 function processVTT(input) {
     let vttContent = input.trim().split('\n');
@@ -64,8 +57,6 @@ function step0_replaceEntityReferences(vttContent) {
     addLog("Replacing HTML entity references", "info");
     return vttContent.map(line => line.replace(/&gt;&gt;/g, '>>'));
 }
-
-// Implement each step function here
 
 function step1_initialProcessing(vttContent) {
     addLog("Starting initial processing", "info");
@@ -178,7 +169,7 @@ function splitLongCaption(captionLines) {
 
     return [...firstHalf, ...secondHalf];
 }
-// ... Implement other step functions ...
+
 function step3_handleLineCount(vttContent) {
     addLog("Starting line count handling", "info");
     let processedContent = [];
@@ -209,7 +200,7 @@ function step3_handleLineCount(vttContent) {
 }
 
 function splitByLineCount(captionLines) {
-    if (captionLines.length <= 3) {  // timestamp + 2 lines of text
+    if (captionLines.length <= 3) {
         return captionLines;
     }
 
@@ -252,7 +243,7 @@ function step4_mergeShortCaptions(vttContent) {
             let mergedCaption = mergeCaptions(captions[i], captions[i+1]);
             if (mergedCaption) {
                 processedContent.push(mergedCaption.timestamp, ...mergedCaption.text);
-                i++;  // Skip the next caption as it's been merged
+                i++;
                 addLog("Merged short caption with the next one", "merge");
             } else {
                 processedContent.push(captions[i].timestamp, ...captions[i].text);
@@ -278,7 +269,7 @@ function mergeCaptions(caption1, caption2) {
     let newDuration = parseTimestamp(end2) - parseTimestamp(start1);
 
     if (newDuration > 7000 || caption1.text.length + caption2.text.length > 2) {
-        return null;  // Can't merge if it exceeds 7 seconds or 2 lines
+        return null;
     }
 
     return {
@@ -286,6 +277,7 @@ function mergeCaptions(caption1, caption2) {
         text: [...caption1.text, ...caption2.text]
     };
 }
+
 function step5_processQuestions(vttContent) {
     addLog("Starting question processing", "info");
     let processedContent = [];
@@ -339,6 +331,7 @@ function processQuestionInCaption(captionLines) {
 
     return [timestamp, ...processedLines];
 }
+
 function step6_formatSpeakerDash(vttContent) {
     addLog("Starting speaker dash formatting", "info");
     let processedContent = [];
@@ -389,13 +382,13 @@ function formatSpeakerDashInCaption(captionLines) {
 
     return [timestamp, ...processedLines];
 }
+
 function step7_adjustTiming(vttContent) {
     addLog("Starting timing adjustment", "info");
     let processedContent = [];
     let captions = [];
     let currentCaption = null;
 
-    // Parse captions
     for (let line of vttContent) {
         if (line.includes('-->')) {
             if (currentCaption) {
@@ -412,7 +405,6 @@ function step7_adjustTiming(vttContent) {
         captions.push(currentCaption);
     }
 
-    // Adjust timing
     for (let i = 0; i < captions.length - 1; i++) {
         let [startCurrent, endCurrent] = captions[i].timestamp.split(' --> ');
         let [startNext, endNext] = captions[i+1].timestamp.split(' --> ');
@@ -421,10 +413,9 @@ function step7_adjustTiming(vttContent) {
         let startNextMs = parseTimestamp(startNext);
         
         let gap = startNextMs - endCurrentMs;
-        let twoFramesMs = Math.round(2000 / 24);  // 2 frames at 24fps, rounded to nearest millisecond
+        let twoFramesMs = Math.round(2000 / 24);
 
         if (gap < twoFramesMs) {
-            // If gap is less than 2 frames, increase it
             let adjustmentMs = twoFramesMs - gap;
             endCurrentMs = Math.round(endCurrentMs + adjustmentMs / 2);
             startNextMs = Math.round(startNextMs + adjustmentMs / 2);
@@ -443,7 +434,6 @@ function step7_adjustTiming(vttContent) {
     addLog("Timing adjustment completed", "info");
     return processedContent;
 }
-
 function step8_finalValidation(vttContent) {
     addLog("Starting final validation", "info");
     let processedContent = [];
@@ -504,16 +494,6 @@ function step9_addNewlinesToTimestamps(vttContent) {
     return processedContent;
 }
 
-function updateButtonStates() {
-    const fileInput = document.getElementById('fileInput');
-    const processButton = document.getElementById('processButton');
-    const downloadButton = document.getElementById('downloadButton');
-    const outputVtt = document.getElementById('outputVtt');
-
-    processButton.disabled = !fileInput.files.length;
-    downloadButton.disabled = !outputVtt.value;
-}
-
 function downloadProcessedVtt() {
     const outputVtt = document.getElementById('outputVtt').value;
     const blob = new Blob([outputVtt], { type: 'text/vtt' });
@@ -530,8 +510,7 @@ function downloadProcessedVtt() {
     URL.revokeObjectURL(url);
 }
 
-// Update your existing event listeners and add new ones
-
+// Event Listeners
 document.getElementById('fileInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
@@ -539,7 +518,6 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
         const reader = new FileReader();
         reader.onload = function(e) {
             document.getElementById('inputVtt').value = e.target.result;
-            updateButtonStates();
         };
         reader.readAsText(file);
     }
@@ -551,13 +529,11 @@ document.getElementById('processButton').addEventListener('click', function() {
     const processedVtt = processVTT(inputVtt);
     document.getElementById('outputVtt').value = processedVtt;
     displayLogs();
-    updateButtonStates();
 });
 
 document.getElementById('downloadButton').addEventListener('click', downloadProcessedVtt);
 
-// Call this function on page load to set initial button states
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     displayVersion();
-    updateButtonStates();
 });

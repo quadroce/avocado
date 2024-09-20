@@ -9,6 +9,8 @@ const MIN_CAPTION_DURATION_MS = 1200;
 
 function processQuestionsAndSpeakers(captions) {
   let speakerDashType = '>>';  // Default speaker dash type
+  let questionCount = 0;
+  let editedCaptionsCount = 0;
 
   // Determine the speaker dash type used in the file
   for (let caption of captions) {
@@ -26,12 +28,13 @@ function processQuestionsAndSpeakers(captions) {
     }
   }
 
-  return captions.map(caption => {
+  const processedCaptions = captions.map(caption => {
     if (caption.type === 'header') return caption;
 
     let lines = caption.text.split('\n');
     let newLines = [];
     let addDashToNext = false;
+    let captionEdited = false;
 
     for (let i = 0; i < lines.length; i++) {
       let line = lines[i];
@@ -39,11 +42,13 @@ function processQuestionsAndSpeakers(captions) {
       if (addDashToNext) {
         if (!line.startsWith('>>') && !line.startsWith('-')) {
           line = `${speakerDashType} ${line.charAt(0).toUpperCase() + line.slice(1)}`;
+          captionEdited = true;
         }
         addDashToNext = false;
       }
 
       if (line.includes('?')) {
+        questionCount += (line.match(/\?/g) || []).length;
         newLines.push(line);
         addDashToNext = true;
       } else {
@@ -51,11 +56,21 @@ function processQuestionsAndSpeakers(captions) {
       }
     }
 
+    if (captionEdited) {
+      editedCaptionsCount++;
+    }
+
     return {
       ...caption,
       text: newLines.join('\n')
     };
   });
+
+  return {
+    processedCaptions,
+    questionCount,
+    editedCaptionsCount
+  };
 }
 
 function formatAndDisplayText() {
@@ -69,8 +84,10 @@ function formatAndDisplayText() {
   const mergedCaptions = mergeCaptions(processedCaptions);
   addLog(`Merged captions. New total: ${mergedCaptions.length}`);
 
-  const captionsWithSpeakers = processQuestionsAndSpeakers(mergedCaptions);
+  const { processedCaptions: captionsWithSpeakers, questionCount, editedCaptionsCount } = processQuestionsAndSpeakers(mergedCaptions);
   addLog(`Processed questions and added speaker dashes where needed`);
+  addLog(`Total question marks found: ${questionCount}`);
+  addLog(`Number of captions edited: ${editedCaptionsCount}`);
 
   let formattedText = captionsWithSpeakers.map(caption => {
     if (caption.type === 'header') {

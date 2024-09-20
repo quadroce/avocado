@@ -27,9 +27,11 @@ function formatTimestamp(ms) {
     const hours = Math.floor(ms / 3600000);
     const minutes = Math.floor((ms % 3600000) / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
-    const milliseconds = ms % 1000;
+    const milliseconds = Math.round(ms % 1000);  // Round to nearest millisecond
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
 }
+
+// The rest of the code remains the same...
 
 function processVTT(input) {
     let vttContent = input.trim().split('\n');
@@ -409,13 +411,13 @@ function step7_adjustTiming(vttContent) {
         let startNextMs = parseTimestamp(startNext);
         
         let gap = startNextMs - endCurrentMs;
-        let twoFramesMs = 2000 / 24;  // 2 frames at 24fps
+        let twoFramesMs = Math.round(2000 / 24);  // 2 frames at 24fps, rounded to nearest millisecond
 
         if (gap < twoFramesMs) {
             // If gap is less than 2 frames, increase it
             let adjustmentMs = twoFramesMs - gap;
-            endCurrentMs += adjustmentMs / 2;
-            startNextMs += adjustmentMs / 2;
+            endCurrentMs = Math.round(endCurrentMs + adjustmentMs / 2);
+            startNextMs = Math.round(startNextMs + adjustmentMs / 2);
             addLog(`Increased gap between captions ${i} and ${i+1} to 2 frames`, "info");
 
             captions[i].timestamp = `${startCurrent} --> ${formatTimestamp(endCurrentMs)}`;

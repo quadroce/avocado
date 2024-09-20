@@ -1,271 +1,119 @@
-<!-- 140920240012 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AVOCADO FIXING LINES</title>
-  <style>
-/* Reset and base styles */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Arial', sans-serif;
-  line-height: 1.6;
-  color: #333;
-  background-color: #f4f4f4;
-  padding: 20px;
-}
-
-/* Header styles */
-header {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-header img {
-  width: 100px;
-  height: auto;
-  margin-bottom: 10px;
-}
-
-h1 {
-  color: #50b47b;
-  font-size: 2.5em;
-  margin-bottom: 10px;
-}
-
-h5 {
-  color: #666;
-  font-size: 1em;
-  margin-bottom: 5px;
-}
-
-h6 {
-  color: #888;
-  font-size: 0.9em;
-}
-
-/* Container styles */
-.container {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-
-/* Textarea and output styles */
-textarea, #outputText {
-  width: 48%;
-  height: 300px;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
-}
-
-#outputText {
-  background-color: #fff;
-  overflow-y: auto;
-}
-
-/* Button styles */
-.buttons {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin: 20px 0;
-}
-
-button, .file-upload label {
-  background-color: #50b47b;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  font-size: 14px;
-}
-
-button:hover, .file-upload label:hover {
-  background-color: #429c68;
-}
-
-#formatButton {
-  background-color: #2e8b57; /* A different shade of green */
-}
-
-#formatButton:hover {
-  background-color: #26734a;
-}
-
-/* File upload styles */
-.file-upload {
-  display: inline-block;
-}
-
-#fileInput {
-  display: none;
-}
-
-/* Footer styles */
-footer {
-  text-align: center;
-  margin-top: 30px;
-  color: #888;
-  font-size: 0.8em;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-  .container {
-    flex-direction: column;
-  }
-  
-  textarea, #outputText {
-    width: 100%;
-    margin-bottom: 20px;
-  }
-  
-  .buttons {
-    flex-wrap: wrap;
-  }
-  
-  button, .file-upload label {
-    flex: 1 0 40%;
-  }
-} #logOutput {
-      margin-top: 20px;
-      padding: 10px;
-      background-color: #f0f0f0;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avocado Line Fixer</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥑</text></svg>">
+    <style>
+        :root {
+            --avocado-green: #568203;
+            --avocado-light: #c3d898;
+            --avocado-dark: #2e4600;
+            --avocado-bg: #f0f7e6;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--avocado-bg);
+            color: var(--avocado-dark);
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: var(--avocado-dark);
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px var(--avocado-light);
+        }
+        h2 {
+            color: var(--avocado-green);
+            border-bottom: 2px solid var(--avocado-light);
+            padding-bottom: 5px;
+        }
+        .file-input-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        #fileInput {
+            display: none;
+        }
+        .file-input-label {
+            background-color: var(--avocado-green);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .file-input-label:hover {
+            background-color: var(--avocado-dark);
+        }
+        .button {
+            background-color: var(--avocado-green);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: var(--avocado-dark);
+        }
+        .button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 20px;
+            border: 1px solid var(--avocado-green);
+            border-radius: 5px;
+            padding: 10px;
+            font-family: monospace;
+            background-color: white;
+        }
+        #logOutput {
+            background-color: white;
+            border: 1px solid var(--avocado-green);
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .error { color: #ff4136; }
+        .merge { color: #2ecc40; }
+        .question { color: #ff851b; }
+    </style>
 </head>
 <body>
-  <header>
-    <img src="https://cdn.pixabay.com/photo/2023/08/12/16/45/avocado-8186060_1280.png" alt="Avocado">
-    <h1>AVOCADO FIXING LINES</h1>
-    <h5>V.0.5.1 by Francesco Mucci</h5>
-    <h6>Max 32 Char, Capitalize first string, fixing the short captions</h6>
-  </header>
-<div class="buttons">
-  <div class="file-upload">
-    <label for="fileInput">Upload VTT File</label>
-    <input type="file" id="fileInput" accept=".vtt">
-  </div>
-  <button id="formatButton">Avocadize it!</button>
-  <button onclick="copyOutput()">Copy</button>
-  <button onclick="downloadOutput()">Download</button>
-</div>
-
-<div class="container">
-    <textarea id="inputText">
-   WEBVTT
-
-00:00:00.001 --> 00:00:00.999
-0123456 7890 12345 12345 0123456789 0123 4567
-
-   00:00:01.000 --> 00:00:05.000
-This is a normal caption
-With two lines
-
-00:00:05.500 --> 00:00:10.000
-This caption is too long and should be split into multiple parts because it exceeds the maximum allowed length for a single caption
-
-00:00:10.500 --> 00:00:15.000
->> This caption starts with a speaker change
-And continues on the next line
-
-00:00:15.500 --> 00:00:20.000
-This caption has no end time -->
-
-00:00:20.500 --> 00:00:25.000 align:start position:10%
-This caption includes alignment and positioning information
-
-00:00:25.500 --> 00:00:30.000
-- This caption starts with a dash
--- This line starts with two dashes
-
-00:00:30.500 --> 00:00:35.000
-This caption has &gt; HTML entities &lt; that need to be replaced
-
-00:00:35.500 --> 00:00:40.000
-This caption has no start time
-
-00:00:40.500 --> 00:00:45.000
-This caption has an invalid timestamp format
-
-00:00:45.500 --> 00:00:50.000
-This caption has a very short duration
-
-00:00:50.001 --> 00:00:55.000
-This caption starts immediately after the previous one
-
-00:00:55.000 --> 01:00:00.000
-This is a caption with four lines
-It should be split into two separate captions
-Because it exceeds the standard
-Two-line limit for readability
-
-01:00:00.000 --> 01:00:05.000
-This caption tests hour rollover in timestamps
-
-01:00:05.000 --> 01:00:10.000
->> Speaker 1: This caption has multiple speakers
->> Speaker 2: On different lines
-
-01:00:10.000 --> 01:00:15.000
-This caption has no text content
-
-01:00:15.000 --> 01:00:20.000
-This caption includes special characters: !@#$%^&*()_+
-
-01:00:20.000 --> 01:00:25.000
-This caption has
-unnecessary line breaks
-in the middle of sentences
-
-01:00:25.000 --> 01:00:30.000
-This caption tests merging with the next one
-
-01:00:30.001 --> 01:00:35.000
-Because they are close in time and have few lines
-
-01:00:35.000 --> 01:00:40.000
-This caption has numbers and dates: 12345 01/01/2023
-
-01:00:40.000 --> 01:00:45.000
-  This caption has leading spaces
-    And varying indentation levels
-
-01:00:45.000 --> 01:00:50.000
-This caption ends with an ellipsis...
-
-01:00:50.000 --> 01:00:55.000
-...And this one starts with an ellipsis
-
-01:00:55.000 --> 01:01:00.000
-This is the last caption in the file</textarea>
-   
-    </textarea>
-    <pre id="outputText">Output will appear here!</pre>
-  </div>
-
-  <div id="logOutput">Processing logs will appear here.</div>
-
-  <script src="https://unpkg.com/compromise@14.14.0/builds/compromise.js"></script>
-  <script src="correct.js"></script>
-  <footer>
-    <p>TEST 09122024.0.3</p>
-  </footer>
+    <div class="container">
+        <h1>🥑 Avocado Line Fixer</h1>
+        <h3> <div id="versionDisplay"></div></h3>
+        <div class="file-input-container">
+            <label for="fileInput" class="file-input-label">Choose VTT File</label>
+            <input type="file" id="fileInput" accept=".vtt">
+        </div>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button id="processButton" class="button" >Process VTT</button>
+            <button id="downloadButton" class="button" >Download Processed VTT</button>
+        </div>
+        <h2>Input VTT</h2>
+        <textarea id="inputVtt" readonly></textarea>
+        <h2>Processed VTT</h2>
+        <textarea id="outputVtt" readonly></textarea>
+        <h2>Logs</h2>
+        <div id="logOutput"></div>
+    </div>
+    <script src="correct.js"></script>
 </body>
 </html>

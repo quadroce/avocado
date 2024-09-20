@@ -3,26 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VTT File Processor</title>
+    <title>Avocado Line Fixer</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥑</text></svg>">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        textarea { width: 100%; height: 200px; }
-        #logOutput { margin-top: 20px; }
-        .error { color: red; }
-        .merge { color: green; }
-        .question { color: yellow; }
+        :root {
+            --avocado-green: #568203;
+            --avocado-light: #c3d898;
+            --avocado-dark: #2e4600;
+            --avocado-bg: #f0f7e6;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--avocado-bg);
+            color: var(--avocado-dark);
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: var(--avocado-dark);
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px var(--avocado-light);
+        }
+        h2 {
+            color: var(--avocado-green);
+            border-bottom: 2px solid var(--avocado-light);
+            padding-bottom: 5px;
+        }
+        .file-input-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        #fileInput {
+            display: none;
+        }
+        .file-input-label {
+            background-color: var(--avocado-green);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .file-input-label:hover {
+            background-color: var(--avocado-dark);
+        }
+        .button {
+            background-color: var(--avocado-green);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: var(--avocado-dark);
+        }
+        .button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 20px;
+            border: 1px solid var(--avocado-green);
+            border-radius: 5px;
+            padding: 10px;
+            font-family: monospace;
+            background-color: white;
+        }
+        #logOutput {
+            background-color: white;
+            border: 1px solid var(--avocado-green);
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .error { color: #ff4136; }
+        .merge { color: #2ecc40; }
+        .question { color: #ff851b; }
     </style>
 </head>
 <body>
-    <h1>VTT File Processor</h1>
-    <input type="file" id="fileInput" accept=".vtt">
-    <button id="processButton">Process VTT</button>
-    <h2>Input VTT</h2>
-    <textarea id="inputVtt" readonly></textarea>
-    <h2>Processed VTT</h2>
-    <textarea id="outputVtt" readonly></textarea>
-    <h2>Logs</h2>
-    <div id="logOutput"></div>
+    <div class="container">
+        <h1>🥑 Avocado Line Fixer</h1>
+        <div class="file-input-container">
+            <label for="fileInput" class="file-input-label">Choose VTT File</label>
+            <input type="file" id="fileInput" accept=".vtt">
+        </div>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button id="processButton" class="button" disabled>Process VTT</button>
+            <button id="downloadButton" class="button" disabled>Download Processed VTT</button>
+        </div>
+        <h2>Input VTT</h2>
+        <textarea id="inputVtt" readonly></textarea>
+        <h2>Processed VTT</h2>
+        <textarea id="outputVtt" readonly></textarea>
+        <h2>Logs</h2>
+        <div id="logOutput"></div>
+    </div>
     <script src="correct.js"></script>
 </body>
 </html>

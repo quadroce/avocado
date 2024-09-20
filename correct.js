@@ -389,6 +389,7 @@ function step7_adjustTiming(vttContent) {
     let captions = [];
     let currentCaption = null;
 
+    // Parse captions
     for (let line of vttContent) {
         if (line.includes('-->')) {
             if (currentCaption) {
@@ -405,6 +406,8 @@ function step7_adjustTiming(vttContent) {
         captions.push(currentCaption);
     }
 
+    const twoFramesMs = Math.round(2000 / 24);  // 2 frames at 24fps, rounded to nearest millisecond
+
     for (let i = 0; i < captions.length - 1; i++) {
         let [startCurrent, endCurrent] = captions[i].timestamp.split(' --> ');
         let [startNext, endNext] = captions[i+1].timestamp.split(' --> ');
@@ -413,13 +416,12 @@ function step7_adjustTiming(vttContent) {
         let startNextMs = parseTimestamp(startNext);
         
         let gap = startNextMs - endCurrentMs;
-        let twoFramesMs = Math.round(2000 / 24);
 
-        if (gap < twoFramesMs) {
+        if (gap <= twoFramesMs) {
             let adjustmentMs = twoFramesMs - gap;
-            endCurrentMs = Math.round(endCurrentMs + adjustmentMs / 2);
+            endCurrentMs = Math.round(endCurrentMs - adjustmentMs / 2);
             startNextMs = Math.round(startNextMs + adjustmentMs / 2);
-            addLog(`Increased gap between captions ${i} and ${i+1} to 2 frames`, "info");
+            addLog(`Adjusted gap between captions ${i} and ${i+1} to 2 frames`, "info");
 
             captions[i].timestamp = `${startCurrent} --> ${formatTimestamp(endCurrentMs)}`;
             captions[i+1].timestamp = `${formatTimestamp(startNextMs)} --> ${endNext}`;

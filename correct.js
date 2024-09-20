@@ -17,6 +17,16 @@ function displayLogs() {
 	
 }
 
+function displayVersion() {
+    const versionElement = document.getElementById('versionDisplay');
+    if (versionElement) {
+        versionElement.textContent = `Version: ${version}`;
+    } else {
+        console.warn('Version display element not found');
+    }
+}
+
+
 function parseTimestamp(timestamp) {
     const [hours, minutes, seconds] = timestamp.split(':');
     const [secs, ms] = seconds.split('.');
@@ -423,7 +433,6 @@ function step7_adjustTiming(vttContent) {
             captions[i].timestamp = `${startCurrent} --> ${formatTimestamp(endCurrentMs)}`;
             captions[i+1].timestamp = `${formatTimestamp(startNextMs)} --> ${endNext}`;
         }
-        // If gap is 2 frames or more, do nothing
     }
 
     // Reconstruct processed content
@@ -548,4 +557,7 @@ document.getElementById('processButton').addEventListener('click', function() {
 document.getElementById('downloadButton').addEventListener('click', downloadProcessedVtt);
 
 // Call this function on page load to set initial button states
-updateButtonStates();
+document.addEventListener('DOMContentLoaded', function() {
+    displayVersion();
+    updateButtonStates();
+});

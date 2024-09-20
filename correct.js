@@ -2,10 +2,8 @@ let logs = [];
 let version = "200920241512";
 let uploadedFileName = '';
 
-
 function addLog(message, type = 'info') {
-    addLog(`Version: ${version}`);
-	logs.push({ message, type });
+    	logs.push({ message, type });
 }
 
 function displayLogs() {
@@ -14,6 +12,8 @@ function displayLogs() {
 	const logOutput = document.getElementById('logOutput');
     
 	logOutput.innerHTML = logs.map(log => `<p class="${log.type}">${log.message}</p>`).join('');
+	  document.getElementById("myText").innerHTML = version;
+
 	
 }
 

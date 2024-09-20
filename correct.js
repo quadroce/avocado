@@ -1,4 +1,4 @@
-let version = "190920242343";
+let version = "200920241041";
 let uploadedFileName = '';
 let logMessages = [];
 
@@ -6,6 +6,57 @@ const MAX_LINES_PER_CAPTION = 3;
 const MAX_CHARS_PER_LINE = 32;
 const MAX_CAPTION_DURATION_MS = 7000;
 const MIN_CAPTION_DURATION_MS = 1200;
+
+function processQuestionsAndSpeakers(captions) {
+  let speakerDashType = '>>';  // Default speaker dash type
+
+  // Determine the speaker dash type used in the file
+  for (let caption of captions) {
+    if (caption.type !== 'header') {
+      if (caption.text.includes('>>')) {
+        speakerDashType = '>>';
+        break;
+      } else if (caption.text.includes('--')) {
+        speakerDashType = '-';
+        break;
+      } else if (caption.text.includes('-')) {
+        speakerDashType = '-';
+        break;
+      }
+    }
+  }
+
+  return captions.map(caption => {
+    if (caption.type === 'header') return caption;
+
+    let lines = caption.text.split('\n');
+    let newLines = [];
+    let addDashToNext = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+
+      if (addDashToNext) {
+        if (!line.startsWith('>>') && !line.startsWith('-')) {
+          line = `${speakerDashType} ${line.charAt(0).toUpperCase() + line.slice(1)}`;
+        }
+        addDashToNext = false;
+      }
+
+      if (line.includes('?')) {
+        newLines.push(line);
+        addDashToNext = true;
+      } else {
+        newLines.push(line);
+      }
+    }
+
+    return {
+      ...caption,
+      text: newLines.join('\n')
+    };
+  });
+}
 
 function formatAndDisplayText() {
   logMessages = []; // Reset log messages
@@ -18,7 +69,10 @@ function formatAndDisplayText() {
   const mergedCaptions = mergeCaptions(processedCaptions);
   addLog(`Merged captions. New total: ${mergedCaptions.length}`);
 
-  let formattedText = mergedCaptions.map(caption => {
+  const captionsWithSpeakers = processQuestionsAndSpeakers(mergedCaptions);
+  addLog(`Processed questions and added speaker dashes where needed`);
+
+  let formattedText = captionsWithSpeakers.map(caption => {
     if (caption.type === 'header') {
       return caption.content;
     }

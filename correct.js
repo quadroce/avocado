@@ -382,6 +382,7 @@ function step7_adjustTiming(vttContent) {
     let captions = [];
     let currentCaption = null;
 
+    // Parse captions
     for (let line of vttContent) {
         if (line.includes('-->')) {
             if (currentCaption) {
@@ -394,23 +395,37 @@ function step7_adjustTiming(vttContent) {
             processedContent.push(line);
         }
     }
-
     if (currentCaption) {
         captions.push(currentCaption);
     }
 
-    for (let i = 0; i < captions.length; i++) {
-        let [start, end] = captions[i].timestamp.split(' --> ');
-        if (i < captions.length - 1) {
-            let nextStart = captions[i+1].timestamp.split(' --> ')[0];
-            let gap = parseTimestamp(nextStart) - parseTimestamp(end);
-            if (gap < 83) {  // 2 frames at 24fps
-                end = formatTimestamp(parseTimestamp(end) + Math.floor(gap / 2));
-                captions[i+1].timestamp = `${formatTimestamp(parseTimestamp(nextStart) - Math.floor(gap / 2))} --> ${captions[i+1].timestamp.split(' --> ')[1]}`;
-                addLog("Adjusted timing between captions", "info");
-            }
+    // Adjust timing
+    for (let i = 0; i < captions.length - 1; i++) {
+        let [startCurrent, endCurrent] = captions[i].timestamp.split(' --> ');
+        let [startNext, endNext] = captions[i+1].timestamp.split(' --> ');
+        
+        let endCurrentMs = parseTimestamp(endCurrent);
+        let startNextMs = parseTimestamp(startNext);
+        
+        let gap = startNextMs - endCurrentMs;
+        let twoFramesMs = 2000 / 24;  // 2 frames at 24fps
+
+        if (gap < twoFramesMs) {
+            // If gap is less than 2 frames, increase it
+            let adjustmentMs = twoFramesMs - gap;
+            endCurrentMs += adjustmentMs / 2;
+            startNextMs += adjustmentMs / 2;
+            addLog(`Increased gap between captions ${i} and ${i+1} to 2 frames`, "info");
+
+            captions[i].timestamp = `${startCurrent} --> ${formatTimestamp(endCurrentMs)}`;
+            captions[i+1].timestamp = `${formatTimestamp(startNextMs)} --> ${endNext}`;
         }
-        processedContent.push(`${start} --> ${end}`, ...captions[i].text);
+        // If gap is 2 frames or more, do nothing
+    }
+
+    // Reconstruct processed content
+    for (let caption of captions) {
+        processedContent.push(caption.timestamp, ...caption.text);
     }
 
     addLog("Timing adjustment completed", "info");

@@ -7,6 +7,17 @@ const MAX_CHARS_PER_LINE = 32;
 const MAX_CAPTION_DURATION_MS = 7000;
 const MIN_CAPTION_DURATION_MS = 1200;
 
+function decodeHTMLEntities(text) {
+  const entities = {
+    '&gt;': '>',
+    '&lt;': '<',
+    '&amp;': '&',
+    '&quot;': '"',
+    '&#39;': "'"
+  };
+  return text.replace(/&[^;]+;/g, entity => entities[entity] || entity);
+}
+
 function processQuestionsAndSpeakers(captions) {
   let speakerDashType = '>>';  // Default speaker dash type
   let questionCount = 0;
@@ -15,13 +26,14 @@ function processQuestionsAndSpeakers(captions) {
   // Determine the speaker dash type used in the file
   for (let caption of captions) {
     if (caption.type !== 'header') {
-      if (caption.text.includes('>>')) {
+      const decodedText = decodeHTMLEntities(caption.text);
+      if (decodedText.includes('>>')) {
         speakerDashType = '>>';
         break;
-      } else if (caption.text.includes('--')) {
+      } else if (decodedText.includes('--')) {
         speakerDashType = '-';
         break;
-      } else if (caption.text.includes('-')) {
+      } else if (decodedText.includes('-')) {
         speakerDashType = '-';
         break;
       }
@@ -31,29 +43,31 @@ function processQuestionsAndSpeakers(captions) {
   const processedCaptions = captions.map(caption => {
     if (caption.type === 'header') return caption;
 
-    let lines = caption.text.split('\n');
+    let decodedText = decodeHTMLEntities(caption.text);
+    let lines = decodedText.split('\n');
     let newLines = [];
-    let addDashToNext = false;
     let captionEdited = false;
 
     for (let i = 0; i < lines.length; i++) {
       let line = lines[i];
+      let words = line.split(' ');
+      let newWords = [];
 
-      if (addDashToNext) {
-        if (!line.startsWith('>>') && !line.startsWith('-')) {
-          line = `${speakerDashType} ${line.charAt(0).toUpperCase() + line.slice(1)}`;
-          captionEdited = true;
+      for (let j = 0; j < words.length; j++) {
+        let word = words[j];
+        if (word.includes('?')) {
+          questionCount++;
+          newWords.push(word);
+          if (j < words.length - 1 && !words[j+1].startsWith('>>') && !words[j+1].startsWith('-')) {
+            newWords.push(speakerDashType);
+            captionEdited = true;
+          }
+        } else {
+          newWords.push(word);
         }
-        addDashToNext = false;
       }
 
-      if (line.includes('?')) {
-        questionCount += (line.match(/\?/g) || []).length;
-        newLines.push(line);
-        addDashToNext = true;
-      } else {
-        newLines.push(line);
-      }
+      newLines.push(newWords.join(' '));
     }
 
     if (captionEdited) {
@@ -72,7 +86,6 @@ function processQuestionsAndSpeakers(captions) {
     editedCaptionsCount
   };
 }
-
 function formatAndDisplayText() {
   logMessages = []; // Reset log messages
   const inputText = document.getElementById("inputText").value;

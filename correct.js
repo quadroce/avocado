@@ -1,5 +1,5 @@
 let logs = [];
-let version = "200920241536";
+let version = "200920241543";
 let uploadedFileName = '';
 
 function addLog(message, type = 'info') {
@@ -447,45 +447,74 @@ function step7_adjustTiming(vttContent) {
 function step8_finalValidation(vttContent) {
     addLog("Starting final validation", "info");
     let processedContent = [];
-    let inCaption = false;
-    let currentCaption = [];
+    let captions = [];
     let captionCount = 0;
     let longCaptionCount = 0;
+    let shortGapCount = 0;
+    let currentCaption = null;
 
+    // First pass: Collect captions and check line count
     for (let line of vttContent) {
         if (line.includes('-->')) {
-            if (inCaption) {
+            if (currentCaption) {
+                captions.push(currentCaption);
                 captionCount++;
-                if (currentCaption.length > 4) {  // timestamp + 3 lines
+                if (currentCaption.text.length > 3) {  // 3 lines of text (excluding timestamp)
                     longCaptionCount++;
                     addLog(`Caption ${captionCount} has more than 3 lines`, "error");
                 }
-                processedContent.push(...currentCaption);
-                currentCaption = [];
             }
-            inCaption = true;
-            currentCaption.push(line);
-        } else if (inCaption) {
-            currentCaption.push(line);
+            currentCaption = { timestamp: line, text: [] };
+        } else if (currentCaption) {
+            currentCaption.text.push(line);
         } else {
             processedContent.push(line);
         }
     }
 
-    if (currentCaption.length > 0) {
+    // Add the last caption
+    if (currentCaption) {
+        captions.push(currentCaption);
         captionCount++;
-        if (currentCaption.length > 4) {
+        if (currentCaption.text.length > 3) {
             longCaptionCount++;
             addLog(`Caption ${captionCount} has more than 3 lines`, "error");
         }
-        processedContent.push(...currentCaption);
     }
 
+    // Second pass: Check timing gaps
+    let twoFramesMs = Math.round(2000 / 24);  // 2 frames at 24fps, rounded to nearest millisecond
+    for (let i = 0; i < captions.length - 1; i++) {
+        let [, endCurrent] = captions[i].timestamp.split(' --> ');
+        let [startNext,] = captions[i+1].timestamp.split(' --> ');
+        
+        let endCurrentMs = parseTimestamp(endCurrent);
+        let startNextMs = parseTimestamp(startNext);
+        
+        let gap = startNextMs - endCurrentMs;
+        
+        if (gap < twoFramesMs) {
+            shortGapCount++;
+            addLog(`Gap between captions ${i+1} and ${i+2} is less than 2 frames`, "error");
+        }
+    }
+
+    // Reconstruct processed content
+    for (let caption of captions) {
+        processedContent.push(caption.timestamp, ...caption.text);
+    }
+
+    // Final logs
     addLog(`Final validation completed. Processed ${captionCount} captions.`, "info");
     if (longCaptionCount > 0) {
         addLog(`Found ${longCaptionCount} captions with more than 3 lines`, "error");
     } else {
         addLog("All captions have 3 or fewer lines", "info");
+    }
+    if (shortGapCount > 0) {
+        addLog(`Found ${shortGapCount} gaps between captions that are less than 2 frames`, "error");
+    } else {
+        addLog("All gaps between captions are at least 2 frames", "info");
     }
 
     return processedContent;

@@ -1,5 +1,5 @@
 let logs = [];
-let version = "200920241549";
+let version = "200920241551";
 let uploadedFileName = '';
 
 function addLog(message, type = 'info') {
@@ -447,74 +447,45 @@ function step7_adjustTiming(vttContent) {
 function step8_finalValidation(vttContent) {
     addLog("Starting final validation", "info");
     let processedContent = [];
-    let captions = [];
+    let inCaption = false;
+    let currentCaption = [];
     let captionCount = 0;
     let longCaptionCount = 0;
-    let shortGapCount = 0;
-    let currentCaption = null;
 
-    // First pass: Collect captions and check line count
     for (let line of vttContent) {
         if (line.includes('-->')) {
-            if (currentCaption) {
-                captions.push(currentCaption);
+            if (inCaption) {
                 captionCount++;
-                if (currentCaption.text.length > 3) {  // 3 lines of text (excluding timestamp)
+                if (currentCaption.length > 4) {  // timestamp + 3 lines
                     longCaptionCount++;
                     addLog(`Caption ${captionCount} has more than 3 lines`, "error");
                 }
+                processedContent.push(...currentCaption);
+                currentCaption = [];
             }
-            currentCaption = { timestamp: line, text: [] };
-        } else if (currentCaption) {
-            currentCaption.text.push(line);
+            inCaption = true;
+            currentCaption.push(line);
+        } else if (inCaption) {
+            currentCaption.push(line);
         } else {
             processedContent.push(line);
         }
     }
 
-    // Add the last caption
-    if (currentCaption) {
-        captions.push(currentCaption);
+    if (currentCaption.length > 0) {
         captionCount++;
-        if (currentCaption.text.length > 3) {
+        if (currentCaption.length > 4) {
             longCaptionCount++;
             addLog(`Caption ${captionCount} has more than 3 lines`, "error");
         }
+        processedContent.push(...currentCaption);
     }
 
-    // Second pass: Check timing gaps
-    let twoFramesMs = Math.round(2000 / 24);  // 2 frames at 24fps, rounded to nearest millisecond
-    for (let i = 0; i < captions.length - 1; i++) {
-        let [, endCurrent] = captions[i].timestamp.split(' --> ');
-        let [startNext,] = captions[i+1].timestamp.split(' --> ');
-        
-        let endCurrentMs = parseTimestamp(endCurrent);
-        let startNextMs = parseTimestamp(startNext);
-        
-        let gap = startNextMs - endCurrentMs;
-        
-        if (gap < twoFramesMs) {
-            shortGapCount++;
-            addLog(`Gap between captions ${i+1} and ${i+2} is less than 2 frames`, "error");
-        }
-    }
-
-    // Reconstruct processed content
-    for (let caption of captions) {
-        processedContent.push(caption.timestamp, ...caption.text);
-    }
-
-    // Final logs
     addLog(`Final validation completed. Processed ${captionCount} captions.`, "info");
     if (longCaptionCount > 0) {
         addLog(`Found ${longCaptionCount} captions with more than 3 lines`, "error");
     } else {
         addLog("All captions have 3 or fewer lines", "info");
-    }
-    if (shortGapCount > 0) {
-        addLog(`Found ${shortGapCount} gaps between captions that are less than 2 frames`, "error");
-    } else {
-        addLog("All gaps between captions are at least 2 frames", "info");
     }
 
     return processedContent;
@@ -540,20 +511,8 @@ function updateButtonStates() {
     const outputVtt = document.getElementById('outputVtt');
 
     processButton.disabled = !fileInput.files.length;
-    downloadButton.disabled = !outputVtt.value.trim();  // Check if outputVtt has non-empty content
+    downloadButton.disabled = !outputVtt.value;
 }
-
-document.getElementById('processButton').addEventListener('click', function() {
-    const inputVtt = document.getElementById('inputVtt').value;
-    logs = []; // Reset logs
-    const processedVtt = processVTT(inputVtt);
-    document.getElementById('outputVtt').value = processedVtt;
-    displayLogs();
-    updateButtonStates();  // Make sure to call this after setting the output value
-});
-
-// Ensure updateButtonStates is called whenever the output changes
-document.getElementById('outputVtt').addEventListener('input', updateButtonStates);
 
 function downloadProcessedVtt() {
     const outputVtt = document.getElementById('outputVtt').value;
@@ -586,7 +545,14 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
     }
 });
 
-
+document.getElementById('processButton').addEventListener('click', function() {
+    const inputVtt = document.getElementById('inputVtt').value;
+    logs = []; // Reset logs
+    const processedVtt = processVTT(inputVtt);
+    document.getElementById('outputVtt').value = processedVtt;
+    displayLogs();
+    updateButtonStates();
+});
 
 document.getElementById('downloadButton').addEventListener('click', downloadProcessedVtt);
 

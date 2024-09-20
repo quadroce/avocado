@@ -1,5 +1,6 @@
 let logs = [];
 let version = "200920241247";
+let uploadedFileName = '';
 
 
 function addLog(message, type = 'info') {
@@ -174,7 +175,7 @@ function step3_handleLineCount(vttContent) {
     for (let line of vttContent) {
         if (line.includes('-->')) {
             if (inCaption) {
-                processedContent.push(...splitLongCaption(currentCaption));
+                processedContent.push(...splitByLineCount(currentCaption));
                 currentCaption = [];
             }
             inCaption = true;
@@ -187,14 +188,14 @@ function step3_handleLineCount(vttContent) {
     }
 
     if (currentCaption.length > 0) {
-        processedContent.push(...splitLongCaption(currentCaption));
+        processedContent.push(...splitByLineCount(currentCaption));
     }
 
     addLog("Line count handling completed", "info");
     return processedContent;
 }
 
-function splitLongCaption(captionLines) {
+function splitByLineCount(captionLines) {
     if (captionLines.length <= 3) {  // timestamp + 2 lines of text
         return captionLines;
     }
@@ -476,12 +477,42 @@ function step9_addNewlinesToTimestamps(vttContent) {
     return processedContent;
 }
 
+function updateButtonStates() {
+    const fileInput = document.getElementById('fileInput');
+    const processButton = document.getElementById('processButton');
+    const downloadButton = document.getElementById('downloadButton');
+    const outputVtt = document.getElementById('outputVtt');
+
+    processButton.disabled = !fileInput.files.length;
+    downloadButton.disabled = !outputVtt.value;
+}
+
+function downloadProcessedVtt() {
+    const outputVtt = document.getElementById('outputVtt').value;
+    const blob = new Blob([outputVtt], { type: 'text/vtt' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    
+    const downloadFileName = uploadedFileName ? `${uploadedFileName}_avocado.vtt` : 'processed_avocado.vtt';
+    a.download = downloadFileName;
+    
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Update your existing event listeners and add new ones
+
 document.getElementById('fileInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
+        uploadedFileName = file.name.replace(/\.[^/.]+$/, "");
         const reader = new FileReader();
         reader.onload = function(e) {
             document.getElementById('inputVtt').value = e.target.result;
+            updateButtonStates();
         };
         reader.readAsText(file);
     }
@@ -493,4 +524,10 @@ document.getElementById('processButton').addEventListener('click', function() {
     const processedVtt = processVTT(inputVtt);
     document.getElementById('outputVtt').value = processedVtt;
     displayLogs();
+    updateButtonStates();
 });
+
+document.getElementById('downloadButton').addEventListener('click', downloadProcessedVtt);
+
+// Call this function on page load to set initial button states
+updateButtonStates();

@@ -1,12 +1,18 @@
 let logs = [];
+let version = "200920241247";
+
 
 function addLog(message, type = 'info') {
     logs.push({ message, type });
 }
 
 function displayLogs() {
-    const logOutput = document.getElementById('logOutput');
-    logOutput.innerHTML = logs.map(log => `<p class="${log.type}">${log.message}</p>`).join('');
+      addLog(`Version: ${version}`);
+
+	const logOutput = document.getElementById('logOutput');
+    
+	logOutput.innerHTML = logs.map(log => `<p class="${log.type}">${log.message}</p>`).join('');
+	
 }
 
 function parseTimestamp(timestamp) {
@@ -26,6 +32,7 @@ function formatTimestamp(ms) {
 function processVTT(input) {
     let vttContent = input.trim().split('\n');
     
+    vttContent = step0_replaceEntityReferences(vttContent);
     vttContent = step1_initialProcessing(vttContent);
     vttContent = step2_handleDuration(vttContent);
     vttContent = step3_handleLineCount(vttContent);
@@ -34,8 +41,14 @@ function processVTT(input) {
     vttContent = step6_formatSpeakerDash(vttContent);
     vttContent = step7_adjustTiming(vttContent);
     vttContent = step8_finalValidation(vttContent);
+    vttContent = step9_addNewlinesToTimestamps(vttContent);
 
     return vttContent.join('\n');
+}
+
+function step0_replaceEntityReferences(vttContent) {
+    addLog("Replacing HTML entity references", "info");
+    return vttContent.map(line => line.replace(/&gt;&gt;/g, '>>'));
 }
 
 // Implement each step function here
@@ -447,6 +460,19 @@ function step8_finalValidation(vttContent) {
         addLog("All captions have 3 or fewer lines", "info");
     }
 
+    return processedContent;
+}
+
+function step9_addNewlinesToTimestamps(vttContent) {
+    addLog("Adding newlines before timestamps", "info");
+    let processedContent = [];
+    for (let line of vttContent) {
+        if (line.includes('-->')) {
+            processedContent.push('', line);
+        } else {
+            processedContent.push(line);
+        }
+    }
     return processedContent;
 }
 

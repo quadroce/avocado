@@ -28,13 +28,13 @@ function processQuestionsAndSpeakers(captions) {
     if (caption.type !== 'header') {
       const decodedText = decodeHTMLEntities(caption.text);
       if (decodedText.includes('>>')) {
-        speakerDashType = '>>';
+        speakerDashType = '\n>>';
         break;
       } else if (decodedText.includes('--')) {
-        speakerDashType = '-';
+        speakerDashType = '\n-';
         break;
       } else if (decodedText.includes('-')) {
-        speakerDashType = '-';
+        speakerDashType = '\n-';
         break;
       }
     }

@@ -1,5 +1,5 @@
 let logs = [];
-let version = "200920241612";
+let version = "230920241023";
 let uploadedFileName = '';
 
 function addLog(message, type = 'info') {

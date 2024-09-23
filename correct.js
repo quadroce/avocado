@@ -53,6 +53,9 @@ function processVTT(input) {
     return vttContent.join('\n');
 }
 
+
+
+
 function step0_replaceEntityReferences(vttContent) {
     addLog("Replacing HTML entity references", "info");
     return vttContent.map(line => line.replace(/&gt;&gt;/g, '>>'));
@@ -115,6 +118,7 @@ function processCaption(captionLines) {
 
     return [timestamp, ...processedLines];
 }
+
 
 function step2_handleDuration(vttContent) {
     addLog("Starting duration handling", "info");
@@ -409,8 +413,11 @@ function step7_adjustTiming(vttContent) {
     const twoFramesMs = Math.round(2000 / 24);  // 2 frames at 24fps, rounded to nearest millisecond
 
     for (let i = 0; i < captions.length - 1; i++) {
-        let [startCurrent, endCurrent] = captions[i].timestamp.split(' --> ');
-        let [startNext, endNext] = captions[i+1].timestamp.split(' --> ');
+        let [timestampPart, attributes] = captions[i].timestamp.split(' line:');
+        let [startCurrent, endCurrent] = timestampPart.split(' --> ');
+        
+        let [nextTimestampPart, nextAttributes] = captions[i+1].timestamp.split(' line:');
+        let [startNext, endNext] = nextTimestampPart.split(' --> ');
         
         let endCurrentMs = parseTimestamp(endCurrent);
         let startNextMs = parseTimestamp(startNext);
@@ -423,8 +430,8 @@ function step7_adjustTiming(vttContent) {
             startNextMs = Math.round(startNextMs + adjustmentMs / 2);
             addLog(`Adjusted gap between captions ${i} and ${i+1} to 2 frames`, "info");
 
-            captions[i].timestamp = `${startCurrent} --> ${formatTimestamp(endCurrentMs)}`;
-            captions[i+1].timestamp = `${formatTimestamp(startNextMs)} --> ${endNext}`;
+            captions[i].timestamp = `${startCurrent} --> ${formatTimestamp(endCurrentMs)}${attributes ? ' line:' + attributes : ''}`;
+            captions[i+1].timestamp = `${formatTimestamp(startNextMs)} --> ${endNext}${nextAttributes ? ' line:' + nextAttributes : ''}`;
         }
     }
 

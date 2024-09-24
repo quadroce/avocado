@@ -1,11 +1,24 @@
 // ccos.js
 
+let ccosVttContent = '';
+
+document.getElementById('ccosVttFileInput').addEventListener('change', function(event) {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      ccosVttContent = e.target.result;
+      document.getElementById('ccosInputVtt').value = ccosVttContent;
+    };
+    reader.readAsText(file);
+  }
+});
+
 async function checkCaptionOnScreen() {
   const mp4Url = document.getElementById('mp4UrlInput').value;
-  const vttContent = document.getElementById('inputVtt').value;
 
-  if (!mp4Url || !vttContent) {
-    logMessage('Please provide both MP4 URL and VTT content', 'error');
+  if (!mp4Url || !ccosVttContent) {
+    logMessage('Please provide both MP4 URL and VTT file for CCOS', 'error');
     return;
   }
 
@@ -18,7 +31,7 @@ async function checkCaptionOnScreen() {
     const videoBlob = await response.blob();
 
     // Process the video and VTT
-    const processedVtt = await processCaptionsOnScreen(videoBlob, vttContent);
+    const processedVtt = await processCaptionsOnScreen(videoBlob, ccosVttContent);
 
     // Update the output textarea
     document.getElementById('outputVtt').value = processedVtt;

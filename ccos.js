@@ -43,18 +43,69 @@ async function checkCaptionOnScreen() {
 }
 
 async function processCaptionsOnScreen(videoBlob, vttContent) {
-  // This is a placeholder for the actual CCOS logic
-  // In a real implementation, you would:
   // 1. Parse the VTT content
-  // 2. Analyze the video frames at each caption timestamp
-  // 3. Check for overlaps between captions and on-screen text
-  // 4. Adjust caption timings as needed
-
-  // For now, we'll just add a small delay to each caption as an example
   const parsedVtt = parseVTT(vttContent);
-  const adjustedVtt = adjustCaptionTimings(parsedVtt);
+
+  // 2. Analyze the video frames at each caption timestamp
+  const videoAnalysis = await analyzeVideoFrames(videoBlob, parsedVtt);
+
+  // 3. Check for overlaps between captions and on-screen text
+  const overlaps = detectOverlaps(parsedVtt, videoAnalysis);
+
+  // 4. Adjust caption timings as needed
+  const adjustedVtt = adjustCaptionTimings(parsedVtt, overlaps);
+
+  // Return the formatted VTT
   return formatVTT(adjustedVtt);
 }
+
+// Helper functions
+
+async function analyzeVideoFrames(videoBlob, captions) {
+  // In a real implementation, this would use a video processing library or API
+  // For this example, we'll simulate the analysis with random data
+  return captions.map(caption => ({
+    timestamp: caption.start,
+    hasOnScreenText: Math.random() > 0.7, // 30% chance of on-screen text
+    textRegions: Math.random() > 0.5 ? ['bottom', 'top'] : ['bottom'] // Simulated text regions
+  }));
+}
+
+function detectOverlaps(captions, videoAnalysis) {
+  return captions.map((caption, index) => {
+    const analysis = videoAnalysis[index];
+    if (analysis.hasOnScreenText) {
+      // Simulate overlap detection
+      const captionPosition = getCaptionPosition(caption);
+      return analysis.textRegions.includes(captionPosition);
+    }
+    return false;
+  });
+}
+
+function getCaptionPosition(caption) {
+  // Simple logic to determine caption position based on content
+  // In a real scenario, this would be more sophisticated
+  const text = caption.text.join(' ').toLowerCase();
+  if (text.includes('top')) return 'top';
+  if (text.includes('middle')) return 'middle';
+  return 'bottom'; // default position
+}
+
+function adjustCaptionTimings(captions, overlaps) {
+  return captions.map((caption, index) => {
+    if (overlaps[index]) {
+      // If there's an overlap, adjust the timing
+      return {
+        ...caption,
+        start: addDelay(caption.start, 0.5), // Move caption 0.5 seconds later
+        end: addDelay(caption.end, 0.5)
+      };
+    }
+    return caption;
+  });
+}
+
 
 function parseVTT(vttContent) {
   // Simple VTT parsing (this should be more robust in a real implementation)

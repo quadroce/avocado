@@ -1,5 +1,6 @@
 // ccos.js
-
+document.addEventListener('DOMContentLoaded', function() {
+ 
 let ccosVttContent = '';
 
 document.getElementById('ccosVttFileInput').addEventListener('change', function(event) {
@@ -105,6 +106,7 @@ function logMessage(message, type = 'info') {
   logOutput.appendChild(logEntry);
   logOutput.scrollTop = logOutput.scrollHeight;
 }
-
+ // Your JavaScript code here
+});
 // Event listener for the CCOS button
 document.getElementById('ccosButton').addEventListener('click', checkCaptionOnScreen);

@@ -123,22 +123,32 @@
   <div class="app-container">
     <h1>🥑 Avocado VTT Fixer</h1>
     <div class="section">
-      <h2>Input Files</h2>
+      <h2>VTT Processing</h2>
       <div class="file-input-container">
         <label for="vttFileInput" class="file-input-label">Select VTT File</label>
         <input type="file" id="vttFileInput" accept=".vtt" style="display:none;">
       </div>
-      <div class="url-input-container">
-        <input type="url" id="mp4UrlInput" class="url-input" placeholder="Enter MP4 URL">
-      </div>
       <textarea id="inputVtt" readonly></textarea>
       <div class="button-container">
         <button id="processVttButton" class="button">Process VTT</button>
-        <button id="ccosButton" class="button">Check Caption On Screen (CCOS)</button>
         <button id="downloadButton" class="button">Download VTT</button>
       </div>
     </div>
     <div class="section">
+      <h2>CCOS (Check Caption On Screen)</h2>
+      <div class="file-input-container">
+        <label for="ccosVttFileInput" class="file-input-label">Select VTT File for CCOS</label>
+        <input type="file" id="ccosVttFileInput" accept=".vtt" style="display:none;">
+      </div>
+      <div class="url-input-container">
+        <input type="url" id="mp4UrlInput" class="url-input" placeholder="Enter MP4 URL">
+      </div>
+      <textarea id="ccosInputVtt" readonly></textarea>
+      <div class="button-container">
+        <button id="ccosButton" class="button">Run CCOS</button>
+      </div>
+    </div>
+    <div class="section" style="grid-column: span 2;">
       <h2>Processed VTT</h2>
       <textarea id="outputVtt" readonly></textarea>
       <h2>Logs</h2>

@@ -1,5 +1,5 @@
 let logs = [];
-let version = "230920241023";
+let version = "260920241023";
 let uploadedFileName = '';
 
 function addLog(message, type = 'info') {
@@ -41,6 +41,7 @@ function processVTT(input) {
     
     vttContent = step0_replaceEntityReferences(vttContent);
     vttContent = step1_initialProcessing(vttContent);
+    vttContent = step1_5_handleExtraSpaces(vttContent);  // New step added here as 1.5
     vttContent = step2_handleDuration(vttContent);
     vttContent = step3_handleLineCount(vttContent);
     vttContent = step4_mergeShortCaptions(vttContent);
@@ -119,6 +120,50 @@ function processCaption(captionLines) {
     return [timestamp, ...processedLines];
 }
 
+function step1_5_handleExtraSpaces(vttContent) {
+    addLog("Starting extra space handling", "info");
+    let processedContent = [];
+    let inCaption = false;
+    let currentCaption = [];
+
+    for (let line of vttContent) {
+        if (line.includes('-->')) {
+            if (inCaption) {
+                processedContent.push(...handleSpacesInCaption(currentCaption));
+                currentCaption = [];
+            }
+            inCaption = true;
+            currentCaption.push(line);
+        } else if (inCaption) {
+            currentCaption.push(line);
+        } else {
+            processedContent.push(line);
+        }
+    }
+
+    if (currentCaption.length > 0) {
+        processedContent.push(...handleSpacesInCaption(currentCaption));
+    }
+
+    addLog("Extra space handling completed", "info");
+    return processedContent;
+}
+
+function handleSpacesInCaption(captionLines) {
+    let timestamp = captionLines[0];
+    let textLines = captionLines.slice(1);
+    let processedLines = [];
+
+    for (let line of textLines) {
+        // Remove leading spaces
+        line = line.trimStart();
+        // Replace multiple spaces with a single space
+        line = line.replace(/\s{2,}/g, ' ');
+        processedLines.push(line);
+    }
+
+    return [timestamp, ...processedLines];
+}
 
 function step2_handleDuration(vttContent) {
     addLog("Starting duration handling", "info");

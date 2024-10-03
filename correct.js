@@ -1,13 +1,34 @@
 let logs = [];
-let version = "260920241023";
+let version = "031020241719";
 let uploadedFileName = '';
+
+// Global statistics object
+let stats = {
+    totalCaptionsModified: 0,
+    longCaptionsSplit: 0,
+    shortCaptionsMerged: 0,
+    sentencesSplit: 0,
+};
 
 function addLog(message, type = 'info') {
     logs.push({ message, type });
 }
 
+function updateStats(statType) {
+    stats.totalCaptionsModified++;
+    stats[statType]++;
+}
+
 function displayLogs() {
     addLog(`Version: ${version}`);
+    
+    // Add summary log
+    addLog("Summary of modifications:", "summary");
+    addLog(`- ${stats.totalCaptionsModified} captions modified`, "summary");
+    addLog(`  - ${stats.longCaptionsSplit} captions were too long and split`, "summary");
+    addLog(`  - ${stats.shortCaptionsMerged} captions were less than 1200 milliseconds and merged`, "summary");
+    addLog(`  - ${stats.sentencesSplit} captions had sentences split`, "summary");
+    
     const logOutput = document.getElementById('logOutput');
     logOutput.innerHTML = logs.map(log => `<p class="${log.type}">${log.message}</p>`).join('');
     document.getElementById("myText").innerHTML = version;
@@ -39,9 +60,17 @@ function formatTimestamp(ms) {
 function processVTT(input) {
     let vttContent = input.trim().split('\n');
     
+    // Reset stats before processing
+    stats = {
+        totalCaptionsModified: 0,
+        longCaptionsSplit: 0,
+        shortCaptionsMerged: 0,
+        sentencesSplit: 0,
+    };
+    
     vttContent = step0_replaceEntityReferences(vttContent);
     vttContent = step1_initialProcessing(vttContent);
-    vttContent = step1_5_handleExtraSpaces(vttContent);  // New step added here as 1.5
+    vttContent = step1_5_handleExtraSpaces(vttContent);
     vttContent = step2_handleDuration(vttContent);
     vttContent = step3_handleLineCount(vttContent);
     vttContent = step4_mergeShortCaptions(vttContent);
@@ -50,12 +79,10 @@ function processVTT(input) {
     vttContent = step7_adjustTiming(vttContent);
     vttContent = step8_finalValidation(vttContent);
     vttContent = step9_addNewlinesToTimestamps(vttContent);
+    vttContent = step10_splitSentences(vttContent);
 
     return vttContent.join('\n');
 }
-
-
-
 
 function step0_replaceEntityReferences(vttContent) {
     addLog("Replacing HTML entity references", "info");
@@ -155,9 +182,7 @@ function handleSpacesInCaption(captionLines) {
     let processedLines = [];
 
     for (let line of textLines) {
-        // Remove leading spaces
         line = line.trimStart();
-        // Replace multiple spaces with a single space
         line = line.replace(/\s{2,}/g, ' ');
         processedLines.push(line);
     }
@@ -202,6 +227,7 @@ function splitLongCaption(captionLines) {
         return captionLines;
     }
 
+    updateStats('longCaptionsSplit');
     addLog(`Splitting caption longer than 7 seconds`, "info");
     let midPoint = parseTimestamp(startTime) + Math.floor(duration / 2);
     let midTime = formatTimestamp(midPoint);
@@ -293,6 +319,7 @@ function step4_mergeShortCaptions(vttContent) {
             if (mergedCaption) {
                 processedContent.push(mergedCaption.timestamp, ...mergedCaption.text);
                 i++;
+                updateStats('shortCaptionsMerged');
                 addLog("Merged short caption with the next one", "merge");
             } else {
                 processedContent.push(captions[i].timestamp, ...captions[i].text);
@@ -365,7 +392,7 @@ function processQuestionInCaption(captionLines) {
     for (let i = 0; i < textLines.length; i++) {
         let line = textLines[i];
         if (addSpeakerDash && !line.startsWith('>>')) {
-            line = '>> ' + line.charAt(0).toUpperCase() + line.slice(1);
+            line = '- ' + line.charAt(0).toUpperCase() + line.slice(1);
             addSpeakerDash = false;
             addLog("Added speaker dash after question", "question");
         }
@@ -488,6 +515,7 @@ function step7_adjustTiming(vttContent) {
     addLog("Timing adjustment completed", "info");
     return processedContent;
 }
+
 function step8_finalValidation(vttContent) {
     addLog("Starting final validation", "info");
     let processedContent = [];
@@ -546,6 +574,63 @@ function step9_addNewlinesToTimestamps(vttContent) {
         }
     }
     return processedContent;
+}
+
+function step10_splitSentences(vttContent) {
+    addLog("Starting sentence splitting", "info");
+    let processedContent = [];
+    let inCaption = false;
+    let currentCaption = [];
+
+    for (let line of vttContent) {
+        if (line.includes('-->')) {
+            if (inCaption) {
+                processedContent.push(...splitSentencesInCaption(currentCaption));
+                currentCaption = [];
+            }
+            inCaption = true;
+            currentCaption.push(line);
+        } else if (inCaption) {
+            currentCaption.push(line);
+        } else {
+            processedContent.push(line);
+        }
+    }
+
+    if (currentCaption.length > 0) {
+        processedContent.push(...splitSentencesInCaption(currentCaption));
+    }
+
+    addLog("Sentence splitting completed", "info");
+    return processedContent;
+}
+
+function splitSentencesInCaption(captionLines) {
+    let timestamp = captionLines[0];
+    let textLines = captionLines.slice(1);
+    let processedLines = [];
+    let sentenceSplit = false;
+
+    for (let line of textLines) {
+        let sentences = line.split('.');
+        for (let i = 0; i < sentences.length; i++) {
+            let sentence = sentences[i].trim();
+            if (sentence) {
+                if (i > 0) {
+                    processedLines.push('- ' + sentence.charAt(0).toUpperCase() + sentence.slice(1));
+                    sentenceSplit = true;
+                } else {
+                    processedLines.push(sentence);
+                }
+            }
+        }
+    }
+
+    if (sentenceSplit) {
+        updateStats('sentencesSplit');
+    }
+
+    return [timestamp, ...processedLines];
 }
 
 function downloadProcessedVtt() {

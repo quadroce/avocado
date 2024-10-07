@@ -41,127 +41,25 @@ function processVTT(input) {
     
     vttContent = step0_replaceEntityReferences(vttContent);
     vttContent = step1_initialProcessing(vttContent);
-    vttContent = step1_5_handleExtraSpaces(vttContent);
+    vttContent = step1_5_handleExtraSpaces(vttContent);  // New step added here as 1.5
     vttContent = step2_handleDuration(vttContent);
     vttContent = step3_handleLineCount(vttContent);
-    vttContent = step4_mergeShortCaptions(vttContent);  // Moved here
+    vttContent = step4_mergeShortCaptions(vttContent);
     vttContent = step5_processQuestions(vttContent);
     vttContent = step6_formatSpeakerDash(vttContent);
     vttContent = step7_adjustTiming(vttContent);
     vttContent = step8_finalValidation(vttContent);
     vttContent = step9_addNewlinesToTimestamps(vttContent);
-    vttContent = step10_splitSentences(vttContent);  // New step added here
 
     return vttContent.join('\n');
 }
 
-function step4_mergeShortCaptions(vttContent) {
-    addLog("Starting merging of short captions", "info");
-    let processedContent = [];
-    let captions = [];
-    let currentCaption = null;
 
-    for (let line of vttContent) {
-        if (line.includes('-->')) {
-            if (currentCaption) {
-                captions.push(currentCaption);
-            }
-            currentCaption = { timestamp: line, text: [] };
-        } else if (currentCaption) {
-            currentCaption.text.push(line);
-        } else {
-            processedContent.push(line);
-        }
-    }
-
-    if (currentCaption) {
-        captions.push(currentCaption);
-    }
-
-    for (let i = 0; i < captions.length; i++) {
-        let currentDuration = getDuration(captions[i].timestamp);
-        if (currentDuration < 1200 && i < captions.length - 1) {
-            let mergedCaption = mergeCaptions(captions[i], captions[i+1]);
-            if (mergedCaption) {
-                captions[i] = mergedCaption;
-                captions.splice(i+1, 1);
-                updateStats('shortCaptionsMerged');
-                addLog("Merged short caption with the next one", "merge");
-                i--; // Ricontrolliamo questa didascalia nel caso sia ancora troppo corta
-            } else {
-                addLog("Unable to merge short caption", "error");
-            }
-        }
-    }
-
-    // Ricostruiamo il contenuto processato
-    for (let caption of captions) {
-        processedContent.push(caption.timestamp, ...caption.text);
-    }
-
-    addLog("Merging of short captions completed", "info");
-    return processedContent;
-}
-
-function step10_splitSentences(vttContent) {
-    addLog("Starting sentence splitting", "info");
-    let processedContent = [];
-    let inCaption = false;
-    let currentCaption = [];
-
-    for (let line of vttContent) {
-        if (line.includes('-->')) {
-            if (inCaption) {
-                processedContent.push(...splitSentencesInCaption(currentCaption));
-                currentCaption = [];
-            }
-            inCaption = true;
-            currentCaption.push(line);
-        } else if (inCaption) {
-            currentCaption.push(line);
-        } else {
-            processedContent.push(line);
-        }
-    }
-
-    if (currentCaption.length > 0) {
-        processedContent.push(...splitSentencesInCaption(currentCaption));
-    }
-
-    addLog("Sentence splitting completed", "info");
-    return processedContent;
-}
-
-function splitSentencesInCaption(captionLines) {
-    let timestamp = captionLines[0];
-    let textLines = captionLines.slice(1);
-    let processedLines = [];
-
-    for (let line of textLines) {
-        let sentences = line.split('.');
-        for (let i = 0; i < sentences.length; i++) {
-            let sentence = sentences[i].trim();
-            if (sentence) {
-                if (i > 0) {
-                    processedLines.push('- ' + sentence.charAt(0).toUpperCase() + sentence.slice(1));
-                } else {
-                    processedLines.push(sentence);
-                }
-            }
-        }
-    }
-
-    return [timestamp, ...processedLines];
-}
 
 
 function step0_replaceEntityReferences(vttContent) {
-    addLog("Replacing HTML entity references and >> with -", "info");
-    return vttContent.map(line => {
-        line = line.replace(/&gt;&gt;/g, '-');
-        line = line.replace(/^>>/g, '-');
-        return line;
-    });
+    addLog("Replacing HTML entity references", "info");
+    return vttContent.map(line => line.replace(/&gt;&gt;/g, '>>'));
 }
 
 function step1_initialProcessing(vttContent) {
@@ -199,7 +97,7 @@ function processCaption(captionLines) {
     let processedLines = [];
 
     for (let line of textLines) {
-        line = line.replace(/^[-–]{1,2}|^>>/g, '-');
+        line = line.replace(/^[-–]{1,2}|^>>/g, '>>');
         let words = line.split(' ');
         let currentLine = '';
 
@@ -365,7 +263,69 @@ function splitByLineCount(captionLines) {
     return [...firstHalf, ...secondHalf];
 }
 
+function step4_mergeShortCaptions(vttContent) {
+    addLog("Starting merging of short captions", "info");
+    let processedContent = [];
+    let captions = [];
+    let currentCaption = null;
 
+    for (let line of vttContent) {
+        if (line.includes('-->')) {
+            if (currentCaption) {
+                captions.push(currentCaption);
+            }
+            currentCaption = { timestamp: line, text: [] };
+        } else if (currentCaption) {
+            currentCaption.text.push(line);
+        } else {
+            processedContent.push(line);
+        }
+    }
+
+    if (currentCaption) {
+        captions.push(currentCaption);
+    }
+
+    for (let i = 0; i < captions.length; i++) {
+        let currentDuration = getDuration(captions[i].timestamp);
+        if (currentDuration < 1200 && i < captions.length - 1) {
+            let mergedCaption = mergeCaptions(captions[i], captions[i+1]);
+            if (mergedCaption) {
+                processedContent.push(mergedCaption.timestamp, ...mergedCaption.text);
+                i++;
+                addLog("Merged short caption with the next one", "merge");
+            } else {
+                processedContent.push(captions[i].timestamp, ...captions[i].text);
+                addLog("Unable to merge short caption", "error");
+            }
+        } else {
+            processedContent.push(captions[i].timestamp, ...captions[i].text);
+        }
+    }
+
+    addLog("Merging of short captions completed", "info");
+    return processedContent;
+}
+
+function getDuration(timestamp) {
+    let [start, end] = timestamp.split(' --> ');
+    return parseTimestamp(end) - parseTimestamp(start);
+}
+
+function mergeCaptions(caption1, caption2) {
+    let [start1, end1] = caption1.timestamp.split(' --> ');
+    let [start2, end2] = caption2.timestamp.split(' --> ');
+    let newDuration = parseTimestamp(end2) - parseTimestamp(start1);
+
+    if (newDuration > 7000 || caption1.text.length + caption2.text.length > 2) {
+        return null;
+    }
+
+    return {
+        timestamp: `${start1} --> ${end2}`,
+        text: [...caption1.text, ...caption2.text]
+    };
+}
 
 function step5_processQuestions(vttContent) {
     addLog("Starting question processing", "info");
@@ -405,7 +365,7 @@ function processQuestionInCaption(captionLines) {
     for (let i = 0; i < textLines.length; i++) {
         let line = textLines[i];
         if (addSpeakerDash && !line.startsWith('>>')) {
-            line = '- ' + line.charAt(0).toUpperCase() + line.slice(1);
+            line = '>> ' + line.charAt(0).toUpperCase() + line.slice(1);
             addSpeakerDash = false;
             addLog("Added speaker dash after question", "question");
         }
@@ -556,21 +516,6 @@ function step8_finalValidation(vttContent) {
         }
     }
 
-function mergeCaptions(caption1, caption2) {
-    let [start1, end1] = caption1.timestamp.split(' --> ');
-    let [start2, end2] = caption2.timestamp.split(' --> ');
-    let newDuration = parseTimestamp(end2) - parseTimestamp(start1);
-
-    if (newDuration > 7000 || caption1.text.length + caption2.text.length > 2) {
-        return null;
-    }
-
-    return {
-        timestamp: `${start1} --> ${end2}`,
-        text: [...caption1.text, ...caption2.text]
-    };
-}
-
     if (currentCaption.length > 0) {
         captionCount++;
         if (currentCaption.length > 4) {
@@ -592,7 +537,7 @@ function mergeCaptions(caption1, caption2) {
 
 function step9_addNewlinesToTimestamps(vttContent) {
     addLog("Adding newlines before timestamps", "info");
-    let processedContent = ['WEBVTT'];
+    let processedContent = [];
     for (let line of vttContent) {
         if (line.includes('-->')) {
             processedContent.push('', line);
@@ -602,6 +547,7 @@ function step9_addNewlinesToTimestamps(vttContent) {
     }
     return processedContent;
 }
+
 function downloadProcessedVtt() {
     const outputVtt = document.getElementById('outputVtt').value;
     const blob = new Blob([outputVtt], { type: 'text/vtt' });

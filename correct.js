@@ -289,14 +289,17 @@ function step4_mergeShortCaptions(vttContent) {
     for (let i = 0; i < captions.length; i++) {
         let currentDuration = getDuration(captions[i].timestamp);
         if (currentDuration < 1200 && i < captions.length - 1) {
-            let mergedCaption = mergeCaptions(captions[i], captions[i+1]);
+            let mergedCaption = mergeCaptions(captions[i], captions[i + 1]);
             if (mergedCaption) {
                 processedContent.push(mergedCaption.timestamp, ...mergedCaption.text);
-                i++;
-                addLog("Merged short caption with the next one", "merge");
+                i++; // Skip the next caption since it's merged
             } else {
+                // Log only if the merge fails
+                addLog(
+                    `Caption starting at ${captions[i].timestamp.split(' --> ')[0]} could not be merged`,
+                    "error"
+                );
                 processedContent.push(captions[i].timestamp, ...captions[i].text);
-                addLog("Unable to merge short caption", "error");
             }
         } else {
             processedContent.push(captions[i].timestamp, ...captions[i].text);
@@ -306,6 +309,7 @@ function step4_mergeShortCaptions(vttContent) {
     addLog("Merging of short captions completed", "info");
     return processedContent;
 }
+
 
 function getDuration(timestamp) {
     let [start, end] = timestamp.split(' --> ');
@@ -364,8 +368,8 @@ function processQuestionInCaption(captionLines) {
 
     for (let i = 0; i < textLines.length; i++) {
         let line = textLines[i];
-        if (addSpeakerDash && !line.startsWith('>>')) {
-            line = '>> ' + line.charAt(0).toUpperCase() + line.slice(1);
+        if (addSpeakerDash && !line.startsWith('-')) {
+            line = '-' + line.charAt(0).toUpperCase() + line.slice(1);
             addSpeakerDash = false;
             addLog("Added speaker dash after question", "question");
         }

@@ -24,7 +24,7 @@ def index():
             clean_vtt_file(input_path, output_path)
             return send_file(output_path, as_attachment=True)
         return "Invalid file format. Please upload a .vtt file."
-    return render_template("index.html")
+    return render_template("avocado.html")
 
 if __name__ == "__main__":
     os.makedirs("uploads", exist_ok=True)

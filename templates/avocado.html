@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avocado VTT Fixer</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22></text></svg>">
+  <style>
+    :root {
+      --avocado-green: #6b8e23;
+      --avocado-light: #d0e68b;
+      --avocado-dark: #3a5311;
+      --avocado-bg: #eef4d3;
+    }
+    body {
+      font-family: 'Verdana', sans-serif;
+      background-color: var(--avocado-bg);
+      color: var(--avocado-dark);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .app-container {
+      width: 90%;
+      max-width: 1000px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-gap: 20px;
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    .section {
+      background-color: var(--avocado-light);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      grid-column: span 2;
+      text-align: center;
+      color: var(--avocado-green);
+      font-size: 2.5em;
+      text-shadow: 1px 1px var(--avocado-dark);
+    }
+    h2 {
+      margin-bottom: 10px;
+      font-size: 1.5em;
+      color: var(--avocado-green);
+      border-bottom: 2px solid var(--avocado-dark);
+      padding-bottom: 5px;
+    }
+    .file-input-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .file-input-label {
+      background-color: var(--avocado-green);
+      color: white;
+      padding: 12px 25px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .file-input-label:hover {
+      background-color: var(--avocado-dark);
+    }
+    .button-container {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .button {
+      background-color: var(--avocado-green);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+      transition: background-color 0.3s;
+    }
+    .button:hover {
+      background-color: var(--avocado-dark);
+    }
+    .button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      margin-bottom: 15px;
+      padding: 10px;
+      border: 1px solid var(--avocado-green);
+      border-radius: 5px;
+      font-family: monospace;
+      resize: none;
+    }
+    #logOutput {
+      background-color: white;
+      border: 1px solid var(--avocado-dark);
+      border-radius: 5px;
+      padding: 10px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .error { color: #e74c3c; }
+    .merge { color: #27ae60; }
+    .question { color: #f39c12; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <h1>🥑 Avocado VTT Fixer</h1>
+
+    <!-- Nuova sezione: Caricamento file -->
+    <form action="/" method="post" enctype="multipart/form-data" class="section">
+      <h2>Upload VTT File</h2>
+      <input type="file" name="vttFile" accept=".vtt" required>
+      <div class="button-container">
+        <button type="submit" class="button">Process and Download</button>
+      </div>
+    </form>
+
+    <!-- Vecchie funzionalità -->
+    <div class="section">
+      <h2>Manual Input</h2>
+      <textarea id="inputVtt" placeholder="Paste your VTT content here..."></textarea>
+      <div class="button-container">
+        <button id="processButton" class="button">Process VTT</button>
+        <button id="downloadButton" class="button" disabled>Download Processed VTT</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Processed VTT</h2>
+      <textarea id="outputVtt" readonly></textarea>
+      <h2>Logs</h2>
+      <div id="logOutput"></div>
+    </div>
+  </div>
+  <script>
+    // Funzionalità per la gestione manuale
+    document.getElementById("processButton").addEventListener("click", () => {
+      const input = document.getElementById("inputVtt").value;
+      const outputArea = document.getElementById("outputVtt");
+      const logOutput = document.getElementById("logOutput");
+
+      if (!input.trim()) {
+        logOutput.innerHTML = "<p class='error'>Please enter VTT content to process.</p>";
+        return;
+      }
+
+      const processed = input
+        .split("\n")
+        .map(line => (/^\d+$/.test(line.trim()) ? "" : line))
+        .join("\n");
+
+      outputArea.value = processed;
+      document.getElementById("downloadButton").disabled = false;
+
+      logOutput.innerHTML = "<p class='merge'>VTT processed successfully.</p>";
+    });
+
+    document.getElementById("downloadButton").addEventListener("click", () => {
+      const output = document.getElementById("outputVtt").value;
+      const blob = new Blob([output], { type: "text/vtt" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "processed_ascending.vtt";
+      link.click();
+    });
+  </script>
+</body>
+</html>

@@ -118,18 +118,26 @@
 <body>
   <div class="app-container">
     <h1>🥑 Avocado VTT Fixer</h1>
-    <div class="section">
-      <h2>Input VTT</h2>
-      <textarea id="inputVtt" readonly></textarea>
-      <div class="file-input-container">
-        <label for="fileInput" class="file-input-label">Select VTT File</label>
-        <input type="file" id="fileInput" accept=".vtt" style="display:none;">
+
+    <!-- Nuova sezione: Caricamento file -->
+    <form action="/" method="post" enctype="multipart/form-data" class="section">
+      <h2>Upload VTT File</h2>
+      <input type="file" name="vttFile" accept=".vtt" required>
+      <div class="button-container">
+        <button type="submit" class="button">Process and Download</button>
       </div>
+    </form>
+
+    <!-- Vecchie funzionalità -->
+    <div class="section">
+      <h2>Manual Input</h2>
+      <textarea id="inputVtt" placeholder="Paste your VTT content here..."></textarea>
       <div class="button-container">
         <button id="processButton" class="button">Process VTT</button>
-        <button id="downloadButton" class="button">Download VTT</button>
+        <button id="downloadButton" class="button" disabled>Download Processed VTT</button>
       </div>
     </div>
+
     <div class="section">
       <h2>Processed VTT</h2>
       <textarea id="outputVtt" readonly></textarea>
@@ -137,6 +145,37 @@
       <div id="logOutput"></div>
     </div>
   </div>
-  <script src="correct.js"></script>
+  <script>
+    // Funzionalità per la gestione manuale
+    document.getElementById("processButton").addEventListener("click", () => {
+      const input = document.getElementById("inputVtt").value;
+      const outputArea = document.getElementById("outputVtt");
+      const logOutput = document.getElementById("logOutput");
+
+      if (!input.trim()) {
+        logOutput.innerHTML = "<p class='error'>Please enter VTT content to process.</p>";
+        return;
+      }
+
+      const processed = input
+        .split("\n")
+        .map(line => (/^\d+$/.test(line.trim()) ? "" : line))
+        .join("\n");
+
+      outputArea.value = processed;
+      document.getElementById("downloadButton").disabled = false;
+
+      logOutput.innerHTML = "<p class='merge'>VTT processed successfully.</p>";
+    });
+
+    document.getElementById("downloadButton").addEventListener("click", () => {
+      const output = document.getElementById("outputVtt").value;
+      const blob = new Blob([output], { type: "text/vtt" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "processed_ascending.vtt";
+      link.click();
+    });
+  </script>
 </body>
 </html>

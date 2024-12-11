@@ -58,9 +58,10 @@ function processVTT(input) {
 
 
 function step0_replaceEntityReferences(vttContent) {
-    addLog("Replacing HTML entity references", "info");
-    return vttContent.map(line => line.replace(/&gt;&gt;/g, '>>'));
+    addLog("Replacing >> with -", "info");
+    return vttContent.map(line => line.replace(/>>/g, '-'));
 }
+
 
 function step1_initialProcessing(vttContent) {
     addLog("Starting initial processing", "info");

@@ -14,19 +14,21 @@ def clean_vtt_file(input_path, output_path):
             else:
                 output_file.write(line)
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET"])
 def index():
-    if request.method == "POST":
-        file = request.files.get("vttFile")
-        if file and file.filename.endswith(".vtt"):
-            input_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-            output_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{os.path.splitext(file.filename)[0]}_ascending.vtt")
-            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-            file.save(input_path)
-            clean_vtt_file(input_path, output_path)
-            return send_file(output_path, as_attachment=True)
-        return "Invalid file format. Please upload a .vtt file."
     return render_template("avocado.html")
+
+@app.route("/clean_vtt", methods=["POST"])
+def clean_vtt():
+    file = request.files.get("vttFile")
+    if file and file.filename.endswith(".vtt"):
+        input_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        output_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{os.path.splitext(file.filename)[0]}_cleaned.vtt")
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        file.save(input_path)
+        clean_vtt_file(input_path, output_path)
+        return send_file(output_path, as_attachment=True)
+    return "Invalid file format. Please upload a .vtt file."
 
 if __name__ == "__main__":
     app.run(debug=True)

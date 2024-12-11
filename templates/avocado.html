@@ -59,17 +59,6 @@
       justify-content: center;
       margin-bottom: 20px;
     }
-    .file-input-label {
-      background-color: var(--avocado-green);
-      color: white;
-      padding: 12px 25px;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    .file-input-label:hover {
-      background-color: var(--avocado-dark);
-    }
     .button-container {
       text-align: center;
       margin: 20px 0;
@@ -92,89 +81,37 @@
       background-color: #ccc;
       cursor: not-allowed;
     }
-    textarea {
-      width: 100%;
-      height: 150px;
-      margin-bottom: 15px;
-      padding: 10px;
-      border: 1px solid var(--avocado-green);
-      border-radius: 5px;
-      font-family: monospace;
-      resize: none;
-    }
-    #logOutput {
-      background-color: white;
-      border: 1px solid var(--avocado-dark);
-      border-radius: 5px;
-      padding: 10px;
-      max-height: 150px;
-      overflow-y: auto;
-    }
-    .error { color: #e74c3c; }
-    .merge { color: #27ae60; }
-    .question { color: #f39c12; }
   </style>
 </head>
 <body>
   <div class="app-container">
     <h1>🥑 Avocado VTT Fixer</h1>
 
-    <!-- Nuova sezione: Caricamento file -->
-    <form action="/" method="post" enctype="multipart/form-data" class="section">
-      <h2>Upload VTT File</h2>
+    <!-- Upload File Section -->
+    <form action="/clean_vtt" method="post" enctype="multipart/form-data" class="section">
+      <h2>Delete Ascending Numbers</h2>
       <input type="file" name="vttFile" accept=".vtt" required>
       <div class="button-container">
-        <button type="submit" class="button">Process and Download</button>
+        <button type="submit" class="button">Remove Descending Numbers</button>
       </div>
     </form>
 
-    <!-- Vecchie funzionalità -->
+    <!-- Correct.js Section -->
     <div class="section">
-      <h2>Manual Input</h2>
-      <textarea id="inputVtt" placeholder="Paste your VTT content here..."></textarea>
+      <h2>Fix Short Captions</h2>
       <div class="button-container">
-        <button id="processButton" class="button">Process VTT</button>
-        <button id="downloadButton" class="button" disabled>Download Processed VTT</button>
+        <button id="runCorrectJs" class="button">Run correct.js</button>
       </div>
     </div>
-
-    <div class="section">
-      <h2>Processed VTT</h2>
-      <textarea id="outputVtt" readonly></textarea>
-      <h2>Logs</h2>
-      <div id="logOutput"></div>
-    </div>
   </div>
+
   <script>
-    // Funzionalità per la gestione manuale
-    document.getElementById("processButton").addEventListener("click", () => {
-      const input = document.getElementById("inputVtt").value;
-      const outputArea = document.getElementById("outputVtt");
-      const logOutput = document.getElementById("logOutput");
-
-      if (!input.trim()) {
-        logOutput.innerHTML = "<p class='error'>Please enter VTT content to process.</p>";
-        return;
-      }
-
-      const processed = input
-        .split("\n")
-        .map(line => (/^\d+$/.test(line.trim()) ? "" : line))
-        .join("\n");
-
-      outputArea.value = processed;
-      document.getElementById("downloadButton").disabled = false;
-
-      logOutput.innerHTML = "<p class='merge'>VTT processed successfully.</p>";
-    });
-
-    document.getElementById("downloadButton").addEventListener("click", () => {
-      const output = document.getElementById("outputVtt").value;
-      const blob = new Blob([output], { type: "text/vtt" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "processed_ascending.vtt";
-      link.click();
+    document.getElementById("runCorrectJs").addEventListener("click", () => {
+      // Esempio: Caricare lo script correct.js dinamicamente
+      const script = document.createElement("script");
+      script.src = "/static/correct.js";
+      document.body.appendChild(script);
+      alert("Script correct.js eseguito!");
     });
   </script>
 </body>
